@@ -1,0 +1,11 @@
+# Ignore specific files
+vatsim_bot.db
+
+# Ignore all `.log` files
+*.log
+
+# Ignore a specific folder
+__pycache__/
+
+# Ignore all `.env` files
+.env
