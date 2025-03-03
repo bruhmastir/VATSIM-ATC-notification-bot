@@ -10,7 +10,7 @@ async def handle(message, client):
     conn = sqlite3.connect("vatsim_bot.db")
     cursor = conn.cursor()
 
-    cursor.execute("SELECT icao, primary_threshold, secondary_threshold, tertiary_threshold, cooldown, alert_preference, support_threshold FROM user_preferences WHERE user_id = ?", (user_id,))
+    cursor.execute("SELECT icao, primary_threshold, tertiary_threshold, cooldown, alert_preference, support_threshold FROM user_preferences WHERE user_id = ?", (user_id,))
     registrations = cursor.fetchall()
 
     cursor.execute("SELECT start_time, end_time FROM user_quiet_hours WHERE user_id = ?", (user_id,))
@@ -21,8 +21,8 @@ async def handle(message, client):
 
     if registrations:
         response = "**Your Registered Airports:**\n"
-        for icao, primary, secondary, tertiary, cooldown, alert_preference, support_threshold in registrations:
-            response += f"- **{icao}**: Primary {primary}, Secondary {secondary}, Tertiary {tertiary}, Cooldown {cooldown} min, Alerts: {alert_preference}, Support Threshold: {support_threshold}\n"
+        for icao, primary, tertiary, cooldown, alert_preference, support_threshold in registrations:
+            response += f"- **{icao}**: Primary {primary}, Tertiary {tertiary}, Cooldown {cooldown} min, Alerts: {alert_preference}, Support Threshold: {support_threshold}\n"
     else:
         response = "You have no registered airports.\n"
     

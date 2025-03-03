@@ -9,7 +9,6 @@ def init_db():
         user_id INTEGER,
         icao TEXT,
         primary_threshold INTEGER,
-        secondary_threshold INTEGER,
         tertiary_threshold INTEGER DEFAULT NULL,
         cooldown INTEGER,
         alert_preference TEXT DEFAULT 'channel',

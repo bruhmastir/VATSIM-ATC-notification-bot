@@ -26,8 +26,8 @@
 
 #         await message.channel.send(f"Set primary threshold for {icao}:")
 #         primary_response = await client.wait_for("message", check=check)
-#         await message.channel.send(f"Set secondary threshold for {icao}:")
-#         secondary_response = await client.wait_for("message", check=check)
+#         await message.channel.send(f"Set  threshold for {icao}:")
+#         response = await client.wait_for("message", check=check)
 #         await message.channel.send(f"Set tertiary threshold for {icao} (minimum departures needed before you are alerted when lower ATC is online):")
 #         tertiary_response = await client.wait_for("message", check=check)
 #         await message.channel.send(f"Set cooldown time in minutes for {icao}:")
@@ -44,8 +44,8 @@
 #         support_threshold_response = await client.wait_for("message", check=check)
         
 #         try:
-#             cursor.execute("REPLACE INTO user_preferences (user_id, icao, primary_threshold, secondary_threshold, tertiary_threshold, cooldown, alert_preference, support_threshold) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-#                            (user_id, icao, int(primary_response.content), int(secondary_response.content), int(tertiary_response.content), int(cooldown_response.content), alert_preference, int(support_threshold_response.content)))
+#             cursor.execute("REPLACE INTO user_preferences (user_id, icao, primary_threshold, tertiary_threshold, cooldown, alert_preference, support_threshold) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+#                            (user_id, icao, int(primary_response.content), int(response.content), int(tertiary_response.content), int(cooldown_response.content), alert_preference, int(support_threshold_response.content)))
 #             conn.commit()
 #         except ValueError:
 #             await message.channel.send(f"Invalid values for {icao}, registration skipped.")
@@ -149,16 +149,7 @@ async def handle(message, client):
         if not is_valid_number(primary_response.content):
             await message.channel.send("Invalid input. Please enter a valid number.")
             continue
-        
-        await message.channel.send(f"Set secondary threshold for {icao}:")
-        secondary_response = await client.wait_for("message", check=check)
-        if secondary_response.content.strip().upper() == "CANCEL":
-            await message.channel.send("Registration process cancelled.")
-            conn.close()
-            return
-        if not is_valid_number(secondary_response.content):
-            await message.channel.send("Invalid input. Please enter a valid number.")
-            continue
+    
         
         await message.channel.send(f"Set tertiary threshold for {icao}:")
         tertiary_response = await client.wait_for("message", check=check)
@@ -202,8 +193,8 @@ async def handle(message, client):
             continue
         
         try:
-            cursor.execute("REPLACE INTO user_preferences (user_id, icao, primary_threshold, secondary_threshold, tertiary_threshold, cooldown, alert_preference, support_threshold) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                           (user_id, icao, int(primary_response.content), int(secondary_response.content), int(tertiary_response.content), int(cooldown_response.content), alert_preference, int(support_threshold_response.content)))
+            cursor.execute("REPLACE INTO user_preferences (user_id, icao, primary_threshold, tertiary_threshold, cooldown, alert_preference, support_threshold) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                           (user_id, icao, int(primary_response.content), int(tertiary_response.content), int(cooldown_response.content), alert_preference, int(support_threshold_response.content)))
             conn.commit()
         except ValueError:
             await message.channel.send(f"Invalid values for {icao}, registration skipped.")

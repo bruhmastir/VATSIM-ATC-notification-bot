@@ -34,7 +34,7 @@ async def check_airport_status(icao, data, client):
     conn = sqlite3.connect("vatsim_bot.db")
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT user_id, primary_threshold, secondary_threshold, tertiary_threshold, cooldown, alert_preference, atc_rating
+        SELECT user_id, primary_threshold, tertiary_threshold, cooldown, alert_preference, atc_rating
         FROM user_preferences JOIN user_ratings USING (user_id)
         WHERE icao = ? AND primary_threshold <= ?
     """, (icao, num_departures))
@@ -57,7 +57,7 @@ async def check_airport_status(icao, data, client):
     missing_rating = ""
     message = ""
 
-    for user_id, primary_threshold, secondary_threshold, tertiary_threshold, cooldown, alert_preference, atc_rating in users:
+    for user_id, primary_threshold, tertiary_threshold, cooldown, alert_preference, atc_rating in users:
         # print(missing_rating)
 
         
@@ -70,10 +70,6 @@ async def check_airport_status(icao, data, client):
             message = f"🚨 ATC NEEDED: {icao} has {num_departures} departures with no ATC online! 🚨"
             missing_rating = atc_rating
 
-        # Check if secondary threshold is exceeded and a higher ATC is available but not lower ATC
-        # elif num_departures > secondary_threshold:
-        #     print("not yet implemented. Placeholder text") # placeholder
-        #     message = f"Implementing secondary threshold"
             
         # Check if any of the ATC facilities are unavailable and tertiary threshold is exceeded
         elif is_some_atc_missing and num_departures >= tertiary_threshold:
