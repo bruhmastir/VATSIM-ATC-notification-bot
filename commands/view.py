@@ -1,4 +1,4 @@
-import discord
+import discord # type: ignore
 import sqlite3
 
 # Command metadata

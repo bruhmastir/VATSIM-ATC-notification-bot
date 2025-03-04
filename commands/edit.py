@@ -1,4 +1,4 @@
-import discord
+import discord # type: ignore
 import sqlite3
 from config import SUPPORTED_AIRPORTS  # Import supported airports from config.py
 

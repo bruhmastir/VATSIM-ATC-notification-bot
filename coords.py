@@ -1,5 +1,5 @@
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv # type: ignore
 
 load_dotenv(".env")
 API_KEY = os.getenv("AIRPORTDB_API_KEY")  # Replace with your AIRPORTDB API key
