@@ -38,13 +38,13 @@ async def handle(message, client):
     
     fields = {
         "1": "primary_threshold",
-        "3": "tertiary_threshold",
+        "3": "staff_up_threshold",
         "4": "cooldown",
         "5": "alert_preference",
         "6": "support_threshold"
     }
     
-    await message.channel.send("What do you want to edit?\n1: Primary Threshold\n3: Tertiary Threshold\n4: Cooldown\n5: Alert Preference\n6: Support Threshold\nType the corresponding number:")
+    await message.channel.send("What do you want to edit?\n1: Primary Threshold\n3: staff_up Threshold\n4: Cooldown\n5: Alert Preference\n6: Support Threshold\nType the corresponding number:")
     
     field_response = await client.wait_for("message", check=check)
     field_choice = field_response.content.strip()
@@ -70,7 +70,7 @@ async def handle(message, client):
         conn.close()
         return
     
-    if field_to_edit in ["primary_threshold", "tertiary_threshold", "cooldown", "support_threshold"]:
+    if field_to_edit in ["primary_threshold", "staff_up_threshold", "cooldown", "support_threshold"]:
         try:
             new_value = int(new_value)
             if new_value < 0:

@@ -1,8 +1,11 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
-API_KEY = os.getenv("AVIATIONSTACK_API_KEY")  # Replace with your AviationStack API key 
+load_dotenv(".env")
+API_KEY = os.getenv("AIRPORTDB_API_KEY")  # Replace with your AIRPORTDB API key
+print(API_KEY)
+# API_KEY = "6cee998031c679f9e175a3afb4f63e4fa5d2c657a47c8fafe25cc201f38c8272acb1ee19e75c2dfcb87928a80edf096b"
+# print(API_KEY, "try2")
 
 import sqlite3
 import json
@@ -50,11 +53,14 @@ def fetch_and_store_airport(icao):
         print(response)
         response.raise_for_status()  # Raise error for bad status codes
         data = response.json()
+        abbr = icao[:2]
+        abbr += ","
+        abbr += data["iata_code"]
         # print(data)
         
         if "latitude_deg" in data and "longitude_deg" in data:
             cursor.execute("INSERT OR IGNORE INTO airports (icao, iata, latitude, longitude, abbreviations) VALUES (?, ?, ?, ?, ?)",
-                           (icao, data["iata_code"], float(data["latitude_deg"]), float(data["longitude_deg"]), f"{icao[:2]},{data["iata_code"]}"))
+                           (icao, data["iata_code"], float(data["latitude_deg"]), float(data["longitude_deg"]), abbr))
             conn.commit()
             print(f"Stored {icao} airport in the database.")
     except requests.exceptions.HTTPError as e:

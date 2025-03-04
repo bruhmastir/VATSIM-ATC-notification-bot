@@ -2,7 +2,7 @@ import discord
 import sqlite3
 
 # Command metadata
-description = "View your registered airports, thresholds, cooldowns, quiet hours, support threshold, and tertiary threshold."
+description = "View your registered airports, thresholds, cooldowns, quiet hours, support threshold, and staff_up threshold."
 usage = "!view"
 
 async def handle(message, client):
@@ -10,7 +10,7 @@ async def handle(message, client):
     conn = sqlite3.connect("vatsim_bot.db")
     cursor = conn.cursor()
 
-    cursor.execute("SELECT icao, primary_threshold, tertiary_threshold, cooldown, alert_preference, support_threshold FROM user_preferences WHERE user_id = ?", (user_id,))
+    cursor.execute("SELECT icao, primary_threshold, staff_up_threshold, cooldown, alert_preference, support_threshold FROM user_preferences WHERE user_id = ?", (user_id,))
     registrations = cursor.fetchall()
 
     cursor.execute("SELECT start_time, end_time FROM user_quiet_hours WHERE user_id = ?", (user_id,))
@@ -21,8 +21,8 @@ async def handle(message, client):
 
     if registrations:
         response = "**Your Registered Airports:**\n"
-        for icao, primary, tertiary, cooldown, alert_preference, support_threshold in registrations:
-            response += f"- **{icao}**: Primary {primary}, Tertiary {tertiary}, Cooldown {cooldown} min, Alerts: {alert_preference}, Support Threshold: {support_threshold}\n"
+        for icao, primary, staff_up, cooldown, alert_preference, support_threshold in registrations:
+            response += f"- **{icao}**: Primary {primary}, staff_up {staff_up}, Cooldown {cooldown} min, Alerts: {alert_preference}, Support Threshold: {support_threshold}\n"
     else:
         response = "You have no registered airports.\n"
     

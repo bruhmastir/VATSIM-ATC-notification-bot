@@ -7,9 +7,10 @@ from monitor import monitor_airports
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv()
+load_dotenv(".env")
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-CHANNEL_ID = int(os.getenv("DISCORD_CHANNEL_ID"))
+# CHANNEL_ID = int(os.getenv("DISCORD_CHANNEL_ID"))
+CHANNEL_ID = int("1346109815616966721")
 OWNER_ID = int(os.getenv("BOT_OWNER_ID"))  # Bot owner ID
 
 # Initialize database
