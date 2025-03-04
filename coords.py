@@ -31,18 +31,6 @@ def fetch_and_store_airport(icao):
     conn = sqlite3.connect("airports.db")
     cursor = conn.cursor()
     
-    # Ensure the airports table exists
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS airports (
-        icao TEXT PRIMARY KEY,
-        iata TEXT,
-        latitude REAL,
-        longitude REAL,
-        abbreviations TEXT
-    )
-    """)
-    conn.commit()
-    
     url = f"https://airportdb.io/api/v1/airport/{icao}?apiToken={API_KEY}"
     # headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}  # Ensure proper request format
     
@@ -76,16 +64,6 @@ def fetch_and_store_airport(icao):
 def get_airport_coords(icao):
     conn = sqlite3.connect("airports.db")
     cursor = conn.cursor()
-    # Ensure the airports table exists
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS airports (
-        icao TEXT PRIMARY KEY,
-        iata TEXT,
-        latitude REAL,
-        longitude REAL,
-        abbreviations TEXT
-    )
-    """)
     cursor.execute("SELECT latitude, longitude FROM airports WHERE icao = ?", (icao,))
     result = cursor.fetchone()
     

@@ -31,7 +31,34 @@ def init_db():
         atc_rating TEXT CHECK(atc_rating IN ('S1', 'S2', 'S3', 'C1'))
     )
     """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_opt_outs (
+            user_id INTEGER,
+            icao TEXT,
+            position TEXT,
+            PRIMARY KEY (user_id, icao, position),
+            FOREIGN KEY (user_id) REFERENCES user_ratings(user_id)
+        )
+    """)
     
+    conn.commit()
+    conn.close()
+
+
+    conn = sqlite3.connect("airports.db")
+    cursor = conn.cursor()
+    
+    # Ensure the airports table exists
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS airports (
+        icao TEXT PRIMARY KEY,
+        iata TEXT,
+        latitude REAL,
+        longitude REAL,
+        abbreviations TEXT
+    )
+    """)
     conn.commit()
     conn.close()
 
