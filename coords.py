@@ -54,7 +54,7 @@ def fetch_and_store_airport(icao):
         abbr = icao[:2]
         abbr += ","
         abbr += data["iata_code"]
-        # print(data)
+        print(data)
         
         if "latitude_deg" in data and "longitude_deg" in data:
             cursor.execute("INSERT OR IGNORE INTO airports (icao, iata, latitude, longitude, abbreviations) VALUES (?, ?, ?, ?, ?)",
