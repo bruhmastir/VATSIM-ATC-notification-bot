@@ -1,8 +1,8 @@
-from dotenv import load_dotenv
+from dotenv import load_dotenv # type: ignore
 import os
 import asyncio
 import sqlite3
-import discord
+import discord # type: ignore
 from vatsim import get_vatsim_data
 import config
 import coords
@@ -104,7 +104,7 @@ async def check_airport_status(icao, data, client):
         elif is_some_atc_missing and num_aircraft >= staff_up_threshold:
             message = f"🚨 ATC NEEDED: {icao} has {num_aircraft} aircraft with only partial ATC online. {missing_atc} is needed! 🚨"
         
-        if atc_rating in missing_rating:
+        if (atc_rating in missing_rating) and message:
             key = (user_id, icao)
             if key in alert_cooldowns:
                 last_alert_time = alert_cooldowns[key]

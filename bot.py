@@ -63,7 +63,7 @@ async def on_message(message):
     if message.author == client.user:
         return
     
-    if message.content.startswith("!reload"):
+    if message.content.startswith(f"{command_prefix}reload"):
         if message.author.id != OWNER_ID:
             #await message.channel.send("You do not have permission to reload commands.")
             return
