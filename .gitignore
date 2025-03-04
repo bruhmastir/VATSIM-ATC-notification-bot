@@ -1,8 +1,10 @@
 # Ignore specific files
 vatsim_bot.db
+test.py
 
 # Ignore all `.log` files
 *.log
+*.db
 
 # Ignore a specific folder
 __pycache__/

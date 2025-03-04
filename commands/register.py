@@ -193,7 +193,7 @@ async def handle(message, client):
             continue
         
         try:
-            cursor.execute("REPLACE INTO user_preferences (user_id, icao, primary_threshold, tertiary_threshold, cooldown, alert_preference, support_threshold) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            cursor.execute("REPLACE INTO user_preferences (user_id, icao, primary_threshold, tertiary_threshold, cooldown, alert_preference, support_threshold) VALUES (?, ?, ?, ?, ?, ?, ?)",
                            (user_id, icao, int(primary_response.content), int(tertiary_response.content), int(cooldown_response.content), alert_preference, int(support_threshold_response.content)))
             conn.commit()
         except ValueError:
