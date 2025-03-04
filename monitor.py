@@ -28,8 +28,8 @@ async def monitor_airports(client, interval=60):
                 await check_airport_status(icao, data, client)
         await asyncio.sleep(interval)
 
-
-async def check_airport_status(icao, data, client):
+def get_num_aircraft(icao):
+    data = get_vatsim_data()
     airport_lat, airport_lon = coords.get_airport_coords(icao)
     num_aircraft = sum(
         1 for p in data["pilots"]
@@ -37,6 +37,10 @@ async def check_airport_status(icao, data, client):
         and abs(p.get("latitude", 0) - airport_lat) < 0.1
         and abs(p.get("longitude", 0) - airport_lon) < 0.1
     )
+    return num_aircraft
+
+async def check_airport_status(icao, data, client):
+    num_aircraft = get_num_aircraft(icao)
 
     abbreviation = coords.get_abbr(icao)
     atc_units = [
