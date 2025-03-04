@@ -3,9 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv(".env")
 API_KEY = os.getenv("AIRPORTDB_API_KEY")  # Replace with your AIRPORTDB API key
-print(API_KEY)
-# API_KEY = "6cee998031c679f9e175a3afb4f63e4fa5d2c657a47c8fafe25cc201f38c8272acb1ee19e75c2dfcb87928a80edf096b"
-# print(API_KEY, "try2")
+
 
 import sqlite3
 import json
