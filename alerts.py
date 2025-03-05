@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import sqlite3
 import config
@@ -32,13 +33,6 @@ def get_users_to_alert(icao, num_aircraft, missing_atc, is_any_atc_active, is_so
         ) and ((is_some_atc_missing and num_aircraft >= staff_up_threshold) or (num_aircraft >= primary_threshold and not is_any_atc_active))
 
         if should_alert:
-            key = (user_id, icao)
-            if key in alert_cooldowns:
-                last_alert_time = alert_cooldowns[key]
-                if (discord.utils.utcnow() - last_alert_time).total_seconds() < cooldown * 60:
-                    continue  # Skip alert if cooldown is active
-            
-            alert_cooldowns[key] = discord.utils.utcnow()
 
             # Construct alert message
             if num_aircraft >= primary_threshold and not is_any_atc_active:
@@ -54,11 +48,69 @@ def get_users_to_alert(icao, num_aircraft, missing_atc, is_any_atc_active, is_so
     conn.close()
     return users_to_alert_channel, users_to_alert_dm, message
 
+async def check_cooldown(user_id, icao, time):
+    conn = sqlite3.connect("vatsim_bot.db")
+    cursor = conn.cursor()
+    key = (user_id, icao)
+    cooldown_active = False
+    if key in alert_cooldowns:
+        cursor.execute("SELECT cooldown FROM user_preferences WHERE icao = ? AND user_id = ?", (icao, user_id))
+        response = cursor.fetchone()
+        cooldown = response[0]
+        last_alert_time = alert_cooldowns[key]
+        cooldown_active = (time - last_alert_time).total_seconds() < cooldown * 60
+    conn.close()
+    return cooldown_active
+
+async def check_quiet_hours(user_id, time):
+    conn = sqlite3.connect("vatsim_bot.db")
+    cursor = conn.cursor()
+
+    def in_between(now, start, end):
+    # Convert HH:MM strings to datetime.time objects
+        start_time = datetime.strptime(start, "%H:%M").time()
+        end_time = datetime.strptime(end, "%H:%M").time()
+        now_time = now.time()  # Convert discord timestamp to time
+    
+        # Check if 'now' is between 'start' and 'end'
+        if start_time <= end_time:
+            return start_time <= now_time < end_time
+        else:
+            return start_time <= now_time or now_time < end_time
+        
+    cursor.execute("SELECT user_id, start_time, end_time FROM user_quiet_hours WHERE user_id = ?", (user_id,))
+    response = cursor.fetchone()
+    # Check if we are during quiet hours
+    if response:
+        conn.close()
+        return in_between(time, response[1], response[2])
 
 # ✅ Send alerts to users
-async def send_alerts(icao, num_aircraft, users_to_alert_channel, users_to_alert_dm, missing_rating, client, message):
+async def send_alerts(icao, users_to_alert_channel, users_to_alert_dm, client, message, is_cooldown=False):
+    print("send_alerts fired")
+    users_to_alert = users_to_alert_dm + users_to_alert_channel
+    time = discord.utils.utcnow()
+
+    # Check for cooldown if necessary and for quiet hours
+    for user_id in users_to_alert:
+        key = (user_id, icao)
+        cooldown_active = is_cooldown and await check_cooldown(user_id, icao, time)
+        is_in_quiet_hours = await check_quiet_hours(user_id, time)
+
+        # Check if we are during quiet hours
+        if is_in_quiet_hours or cooldown_active:
+            users_to_alert.remove(user_id)
+            if user_id in users_to_alert_channel:
+                users_to_alert_channel.remove(user_id)
+            else:
+                users_to_alert_dm.remove(user_id)
+
+
+        alert_cooldowns[key] = time
+
+
     if users_to_alert_channel or users_to_alert_dm:
-        print("send_alerts fired")
+        print("send_alerts fired after cooldown and quiet hours checking")
 
     if users_to_alert_channel:
         channel = await client.fetch_channel(int(os.getenv("DISCORD_CHANNEL_ID")))

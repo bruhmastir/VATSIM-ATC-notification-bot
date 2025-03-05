@@ -66,6 +66,6 @@ async def check_airport_status(icao, data, client):
         icao, num_aircraft, missing_atc, is_any_atc_active, is_some_atc_missing
     )
 
-    await send_alerts(icao, num_aircraft, users_to_alert_channel, users_to_alert_dm, missing_atc, client, message)
+    await send_alerts(icao, users_to_alert_channel, users_to_alert_dm, client, message, True)
 
     print(icao, num_aircraft, atc_active, discord.utils.utcnow())
