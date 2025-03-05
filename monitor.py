@@ -39,14 +39,18 @@ def get_num_aircraft(icao):
     )
     return num_aircraft
 
-async def check_airport_status(icao, data, client):
-    num_aircraft = get_num_aircraft(icao)
-
+async def get_atc_units(icao):
     abbreviation = coords.get_abbr(icao)
-    atc_units = [
+    data = get_vatsim_data()
+    return [
         c["callsign"] for c in data["controllers"]
         if c["callsign"] and (c["callsign"].startswith(icao) or any(abbr and c["callsign"].startswith(abbr) for abbr in abbreviation))
     ]
+
+async def check_airport_status(icao, data, client):
+    num_aircraft = get_num_aircraft(icao)
+
+    atc_units = await get_atc_units(icao)
 
     atc_active = {
         "CTR": any("CTR" in callsign for callsign in atc_units),

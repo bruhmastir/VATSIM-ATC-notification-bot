@@ -2,7 +2,8 @@ from datetime import datetime
 import os
 import sqlite3
 import config
-import discord  # type: ignore
+import discord # type: ignore
+import monitor  # type: ignore
 
 alert_cooldowns = {}
 
@@ -123,6 +124,7 @@ async def send_alerts(icao, users_to_alert_channel, users_to_alert_dm, client, m
         if channel:
             mentions = " ".join([f"<@{user_id}>" for user_id in users_to_alert_channel])
             print(f"Sent alert about {icao} to {mentions} via channel")
+            print(await monitor.get_atc_units(icao))
             await channel.send(f"{message} {mentions}")
 
     for user_id in users_to_alert_dm:
