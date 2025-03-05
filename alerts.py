@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import os
 import sqlite3
@@ -55,23 +55,6 @@ def get_users_to_alert(icao, num_aircraft, missing_atc, is_any_atc_active, is_so
 
     conn.close()
     return users_to_alert_channel, users_to_alert_dm, message
-
-# async def check_cooldown(user_id, icao, time):
-#     conn = sqlite3.connect("vatsim_bot.db")
-#     cursor = conn.cursor()
-#     key = (user_id, icao)
-#     cooldown_active = False
-#     if key in alert_cooldowns:
-#         cursor.execute("SELECT cooldown FROM user_preferences WHERE icao = ? AND user_id = ?", (icao, user_id))
-#         response = cursor.fetchone()
-#         cooldown = response[0]
-#         last_alert_time = alert_cooldowns[key]
-#         cooldown_active = (time - last_alert_time).total_seconds() < cooldown * 60
-#     conn.close()
-#     return cooldown_active
-
-
-from datetime import datetime, timedelta
 
 async def check_cooldown(user_id, icao):
     """Check if a cooldown is active for a user at an airport."""
@@ -137,7 +120,7 @@ async def send_alerts(icao, users_to_alert_channel, users_to_alert_dm, client, m
     # Check for cooldown if necessary and for quiet hours
     for user_id in users_to_alert:
         key = (user_id, icao)
-        cooldown_active = is_cooldown and await check_cooldown(user_id, icao, time)
+        cooldown_active = is_cooldown and await check_cooldown(user_id, icao)
         is_in_quiet_hours = await check_quiet_hours(user_id, time)
 
         # Check if we are during quiet hours
@@ -149,27 +132,24 @@ async def send_alerts(icao, users_to_alert_channel, users_to_alert_dm, client, m
                 users_to_alert_dm.remove(user_id)
 
 
-        # alert_cooldowns[key] = time
+        if users_to_alert_channel or users_to_alert_dm:
+            logging.debug("send_alerts fired after cooldown and quiet hours checking")
 
+        for user_id in users_to_alert_dm:
+            user = await client.fetch_user(user_id)
+            try:
+                await user.send(message)
+                logging.info(f"Sent alert about {icao} to {user_id} via DMs")
+            except discord.Forbidden:
+                logging.error(f"Could not DM {user_id}. Defaulting back to alerting on channel")
+                users_to_alert_channel.append(user_id)
 
-    if users_to_alert_channel or users_to_alert_dm:
-        logging.debug("send_alerts fired after cooldown and quiet hours checking")
+        if users_to_alert_channel:
+            channel = await client.fetch_channel(int(os.getenv("DISCORD_CHANNEL_ID")))
+            if channel:
+                mentions = " ".join([f"<@{user_id}>" for user_id in users_to_alert_channel])
+                logging.info(f"Sent alert about {icao} to {mentions} via channel")
+                logging.debug(f"{await monitor.get_atc_units(icao)}")
+                await channel.send(f"{message} {mentions}")
 
-    for user_id in users_to_alert_dm:
-        user = await client.fetch_user(user_id)
-        try:
-            await user.send(message)
-            logging.info(f"Sent alert about {icao} to {user_id} via DMs")
-        except discord.Forbidden:
-            logging.error(f"Could not DM {user_id}. Defaulting back to alerting on channel")
-            users_to_alert_channel.append(user_id)
-
-    if users_to_alert_channel:
-        channel = await client.fetch_channel(int(os.getenv("DISCORD_CHANNEL_ID")))
-        if channel:
-            mentions = " ".join([f"<@{user_id}>" for user_id in users_to_alert_channel])
-            logging.info(f"Sent alert about {icao} to {mentions} via channel")
-            logging.debug(f"{await monitor.get_atc_units(icao)}")
-            await channel.send(f"{message} {mentions}")
-
-    await set_cooldown(user_id, icao)
+        await set_cooldown(user_id, icao)
