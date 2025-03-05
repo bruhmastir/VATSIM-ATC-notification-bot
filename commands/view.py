@@ -4,7 +4,7 @@ import random
 from discord.ui import View, Button  # type: ignore
 
 # Command metadata
-description = "View your registered airports, thresholds, quiet hours, and opted-out positions."
+description = "View your registered airports, thresholds, quiet hours, rating information, and opted-out positions."
 usage = "!view"
 
 # Randomized colors for embeds
@@ -73,9 +73,14 @@ async def handle(message, client):
     registered_airports = cursor.fetchall()
 
     # Fetch user ATC rating
-    cursor.execute("SELECT atc_rating FROM user_ratings WHERE user_id = ?", (user_id,))
-    user_rating = cursor.fetchone()
-    user_rating = user_rating[0] if user_rating else "Not Set"
+    cursor.execute("SELECT atc_rating, tier, unrestricted_airports FROM user_ratings WHERE user_id = ?", (user_id,))
+    rating_info = cursor.fetchone()
+    print(rating_info)
+    user_rating_info = rating_info if rating_info else "Not Set"
+    print(user_rating_info)
+    user_rating = user_rating_info[0]
+    tier = user_rating_info[1]
+    unrestricted_airports = user_rating_info[2] if user_rating_info[2] else "All"
 
     # Fetch user quiet hours
     cursor.execute("SELECT start_time, end_time FROM user_quiet_hours WHERE user_id = ?", (user_id,))
@@ -106,7 +111,9 @@ async def handle(message, client):
     current_page = 0
     # ✅ First Page: General Information
     embed = discord.Embed(title="🛫 __**YOUR ATC MONITORING PREFERENCES**__", color=discord.Color.gold())
-    embed.add_field(name="🎖️ __**ATC Rating**__", value=f"**{user_rating}**", inline=False)
+    embed.add_field(name="🎖️ __**ATC Rating**__", value=f"**{user_rating}**", inline=True)
+    embed.add_field(name="🎖️ __**ATC Rating Tier**__", value=f"**{user_rating}**", inline=True)
+    embed.add_field(name="📊 __**Approved Airports**__", value=f"**{unrestricted_airports}**", inline=False)
     embed.add_field(name="📊 __**Registered Airports**__", value=f"**{len(registered_airports)}**", inline=True)
     embed.add_field(name="🚫 __**Airports with Opt-Outs**__", value=f"**{opt_out_count}**", inline=True)
     embed.set_footer(text=f"Page {1}/{total_pages}")
