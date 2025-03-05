@@ -5,6 +5,7 @@ test.py
 # Ignore all `.log` files
 *.log
 *.db
+!airports.db
 
 # Ignore a specific folder
 __pycache__/
