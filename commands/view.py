@@ -1,6 +1,7 @@
 import discord  # type: ignore
 import sqlite3
 import random
+from discord.ui import View, Button  # type: ignore
 
 # Command metadata
 description = "View your registered airports, thresholds, quiet hours, and opted-out positions."
@@ -8,6 +9,56 @@ usage = "!view"
 
 # Randomized colors for embeds
 EMBED_COLORS = [discord.Color.blue(), discord.Color.green(), discord.Color.purple(), discord.Color.orange(), discord.Color.teal()]
+
+class ViewPreferences(View):
+    def __init__(self, pages, user_id, page=0):
+        super().__init__()
+        self.pages = pages
+        self.page = page
+        self.user_id = user_id
+        self.max_page = len(pages) - 1
+        self.update_buttons()
+
+    def update_buttons(self):
+        """Dynamically update buttons based on the current page."""
+        self.clear_items()
+        if self.page == 0:
+            self.add_item(Button(label="⏮ First", style=discord.ButtonStyle.primary, custom_id="first", disabled=True))
+            self.add_item(Button(label="⬅ Previous", style=discord.ButtonStyle.primary, custom_id="prev", disabled=True))
+            self.add_item(Button(label="Next ➡", style=discord.ButtonStyle.primary, custom_id="next"))
+            self.add_item(Button(label="Last ⏭", style=discord.ButtonStyle.primary, custom_id="last"))
+        elif self.page == self.max_page:
+            self.add_item(Button(label="⏮ First", style=discord.ButtonStyle.primary, custom_id="first"))
+            self.add_item(Button(label="⬅ Previous", style=discord.ButtonStyle.primary, custom_id="prev"))
+            self.add_item(Button(label="Next ➡", style=discord.ButtonStyle.primary, custom_id="next", disabled=True))
+            self.add_item(Button(label="Last ⏭", style=discord.ButtonStyle.primary, custom_id="last", disabled=True))
+        else:
+            self.add_item(Button(label="⏮ First", style=discord.ButtonStyle.primary, custom_id="first"))
+            self.add_item(Button(label="⬅ Previous", style=discord.ButtonStyle.primary, custom_id="prev"))
+            self.add_item(Button(label="Next ➡", style=discord.ButtonStyle.primary, custom_id="next"))
+            self.add_item(Button(label="Last ⏭", style=discord.ButtonStyle.primary, custom_id="last"))
+            
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        """Handles button interactions."""
+        if interaction.user.id != self.user_id:
+            await interaction.response.send_message("⛔ You can't control this menu!", ephemeral=True)
+            return False
+
+        button_id = interaction.data["custom_id"]
+
+        if button_id == "next":
+            self.page += 1
+        elif button_id == "prev":
+            self.page -= 1
+        elif button_id == "first":
+            self.page = 0
+        elif button_id == "last":
+            self.page = self.max_page
+
+        self.update_buttons()
+        await interaction.response.edit_message(embed=self.pages[self.page], view=self)
+        return True
 
 async def handle(message, client):
     user_id = message.author.id
@@ -51,12 +102,14 @@ async def handle(message, client):
 
     # Pagination setup
     pages = []
-
+    total_pages = len(pages) if len(pages) > 0 else len(registered_airports)+2
+    current_page = 0
     # ✅ First Page: General Information
     embed = discord.Embed(title="🛫 __**YOUR ATC MONITORING PREFERENCES**__", color=discord.Color.gold())
     embed.add_field(name="🎖️ __**ATC Rating**__", value=f"**{user_rating}**", inline=False)
     embed.add_field(name="📊 __**Registered Airports**__", value=f"**{len(registered_airports)}**", inline=True)
     embed.add_field(name="🚫 __**Airports with Opt-Outs**__", value=f"**{opt_out_count}**", inline=True)
+    embed.set_footer(text=f"Page {1}/{total_pages}")
 
     if quiet_hours and quiet_hours[0] != "NA":
         embed.add_field(
@@ -71,6 +124,7 @@ async def handle(message, client):
 
     # ✅ Per-Airport Pages (Each airport gets a random color)
     for icao, primary, staff_up, cooldown, alert_preference, support in registered_airports:
+        current_page += 1
         embed_color = random.choice(EMBED_COLORS)  # Assign a random color for variety
         embed = discord.Embed(title=f"🏢 __**{icao} MONITORING PREFERENCES**__", color=embed_color)
         embed.add_field(name="📌 __**Primary Threshold**__", value=f"**{primary}**", inline=True)
@@ -78,6 +132,7 @@ async def handle(message, client):
         embed.add_field(name="⏳ __**Cooldown**__", value=f"**{cooldown} min**", inline=True)
         embed.add_field(name="🔔 __**Alerts**__", value=f"**{alert_preference.upper()}**", inline=True)
         embed.add_field(name="🆘 __**Support Threshold**__", value=f"**{support}**", inline=True)
+        embed.set_footer(text=f"Page {current_page + 1}/{total_pages}")
         pages.append(embed)
 
     # ✅ Opt-Out Page
@@ -85,35 +140,9 @@ async def handle(message, client):
         embed = discord.Embed(title="🚫 __**OPTED-OUT POSITIONS**__", color=discord.Color.red())
         opt_out_text = "\n".join(f"**{icao}** → __{', '.join(positions[icao])}__" for icao in positions)
         embed.add_field(name="Excluded Facilities", value=opt_out_text, inline=False)
+        embed.set_footer(text=f"Page {current_page + 2}/{total_pages}")
         pages.append(embed)
 
     # Send paginated message
-    current_page = 0
-    message_sent = await message.channel.send(embed=pages[current_page])
-
-    # ✅ Add navigation buttons
-    await message_sent.add_reaction("⏮️")  # Jump to first page
-    await message_sent.add_reaction("⬅️")   # Previous page
-    await message_sent.add_reaction("➡️")   # Next page
-    await message_sent.add_reaction("⏭️")  # Jump to last page
-
-    def check(reaction, user):
-        return user == message.author and reaction.message.id == message_sent.id and str(reaction.emoji) in ["⏮️", "⬅️", "➡️", "⏭️"]
-
-    while True:
-        try:
-            reaction, user = await client.wait_for("reaction_add", timeout=120.0, check=check)
-            if str(reaction.emoji) == "➡️":
-                current_page = (current_page + 1) % len(pages)  # Cycle forward
-            elif str(reaction.emoji) == "⬅️":
-                current_page = (current_page - 1) % len(pages)  # Cycle backward
-            elif str(reaction.emoji) == "⏮️":
-                current_page = 0  # Jump to first page
-            elif str(reaction.emoji) == "⏭️":
-                current_page = len(pages) - 1  # Jump to last page
-
-            await message_sent.edit(embed=pages[current_page])
-            await message_sent.remove_reaction(reaction, user)  # Remove reaction after use
-
-        except TimeoutError:
-            break  # Stop waiting if the user is inactive
+    view = ViewPreferences(pages, user_id)
+    await message.channel.send(embed=pages[0], view=view)
