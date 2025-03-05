@@ -1,3 +1,4 @@
+import logging
 import config
 import discord  # type: ignore
 import sqlite3
@@ -82,14 +83,14 @@ async def handle(message, client):
             "S1": ["GND", "DEL"],
         }
 
-        print(atc_active)
-        print(atc_units)
+        logging.debug(f"{atc_active}")
+        logging.debug(f"{atc_units}")
         recommended_position = ""
         for position in possible_positions[atc_rating]:
-            print(position)
+            logging.debug(f"{position}")
             if not atc_active[position] and (icao not in opt_out_dict or position not in opt_out_dict[icao]):
                 recommended_position += f"{position} "
-                print(f"recommended: ", position)
+                logging.debug(f"recommended: %s", position)
                 # break
 
         if recommended_position:

@@ -1,4 +1,5 @@
 from datetime import datetime
+import logging
 import os
 import sqlite3
 import config
@@ -94,7 +95,7 @@ async def check_quiet_hours(user_id, time):
 
 # ✅ Send alerts to users
 async def send_alerts(icao, users_to_alert_channel, users_to_alert_dm, client, message, is_cooldown=False):
-    print("send_alerts fired")
+    logging.debug("send_alerts fired")
     users_to_alert = users_to_alert_dm + users_to_alert_channel
     time = discord.utils.utcnow()
 
@@ -117,20 +118,20 @@ async def send_alerts(icao, users_to_alert_channel, users_to_alert_dm, client, m
 
 
     if users_to_alert_channel or users_to_alert_dm:
-        print("send_alerts fired after cooldown and quiet hours checking")
+        logging.debug("send_alerts fired after cooldown and quiet hours checking")
 
     if users_to_alert_channel:
         channel = await client.fetch_channel(int(os.getenv("DISCORD_CHANNEL_ID")))
         if channel:
             mentions = " ".join([f"<@{user_id}>" for user_id in users_to_alert_channel])
-            print(f"Sent alert about {icao} to {mentions} via channel")
-            print(await monitor.get_atc_units(icao))
+            logging.info(f"Sent alert about {icao} to {mentions} via channel")
+            logging.debug(f"{await monitor.get_atc_units(icao)}")
             await channel.send(f"{message} {mentions}")
 
     for user_id in users_to_alert_dm:
         user = await client.fetch_user(user_id)
         try:
             await user.send(message)
-            print(f"Sent alert about {icao} to {user_id} via DMs")
+            logging.info(f"Sent alert about {icao} to {user_id} via DMs")
         except discord.Forbidden:
-            print(f"Could not DM {user_id}.")
+            logging.error(f"Could not DM {user_id}.")

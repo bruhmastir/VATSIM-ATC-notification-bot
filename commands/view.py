@@ -1,3 +1,4 @@
+import logging
 import config
 import discord  # type: ignore
 import sqlite3
@@ -82,7 +83,7 @@ async def handle(message, client):
     cursor.execute("SELECT atc_rating, tier, unrestricted_airports FROM user_ratings WHERE user_id = ?", (user_id,))
     rating_info = cursor.fetchone()
     user_rating_info = rating_info if rating_info else "Not Set"
-    print(user_rating_info)
+    logging.debug(f"{user_rating_info}")
     user_rating = user_rating_info[0] if user_rating_info != "Not Set" else None
     tier = user_rating_info[1]
     unrestricted_airports = user_rating_info[2] if user_rating_info[2] else "All"

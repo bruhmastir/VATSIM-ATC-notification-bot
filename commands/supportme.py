@@ -1,3 +1,4 @@
+import logging
 import discord  # type: ignore
 import sqlite3
 from monitor import get_num_aircraft
@@ -95,21 +96,21 @@ async def handle(message, client):
     # requested_ratings = config.ATC_RATING_CONVERSIONS[requested_facility]
     if broad_alert:
         requested_facilities.append(FACILITY_HIERARCHY[f] for f in FACILITY_HIERARCHY.keys() if f < requested_facility)
-    print(requested_facilities)
+    logging.debug(f"{requested_facilities}")
 
     # ✅ Find controllers to alert (only if their support_threshold is met)
     to_alert = []
     for user_id, atc_rating, alert_preference, support_threshold in users:
         eligible_facilities = requested_facilities
-        print("atc rating", atc_rating)
-        print("eligible1", eligible_facilities)
+        logging.debug("atc rating %s", atc_rating)
+        logging.debug("eligible1 %s", eligible_facilities)
         if num_aircraft >= support_threshold:  # Ensure traffic meets their threshold
-            print("Passed threshold")
+            logging.debug("Passed threshold")
             # ✅ Fetch opted-out positions for this user & airport
             cursor.execute("SELECT position FROM user_opt_outs WHERE user_id = ? AND icao = ?", (user_id, icao))
             opted_out_positions = {row[0] for row in cursor.fetchall()}  # Convert to set for fast lookup
             if atc_rating in requested_ratings:
-                print("passed rating in requested facilities")
+                logging.debug("passed rating in requested facilities")
             # if atc_rating in FACILITY_HIERARCHY[requested_facility] or (broad_alert and any(atc_rating in FACILITY_HIERARCHY[f] for f in FACILITY_HIERARCHY.keys() if f <= requested_facility)):
                 # ✅ Fetch opted-out positions for this user & airport
                 cursor.execute("SELECT position FROM user_opt_outs WHERE user_id = ? AND icao = ?", (user_id, icao))
@@ -117,12 +118,12 @@ async def handle(message, client):
                 for facility in opted_out_positions:
                     if facility in eligible_facilities:
                         eligible_facilities.remove(facility)
-                print("eligible", eligible_facilities)
+                logging.debug("eligible %s", eligible_facilities)
                 in_quiet_hours = await check_quiet_hours(user_id, time)
                 if eligible_facilities and not in_quiet_hours:
                     to_alert.append((user_id, alert_preference))
 
-    print("to alert", to_alert if to_alert else "")
+    logging.debug("to alert %s", to_alert if to_alert else "")
     if not to_alert:
         await message.channel.send(f"No available controllers meet the support threshold for {requested_facility} at {icao}.")
         conn.close()
@@ -145,7 +146,7 @@ async def handle(message, client):
                 # await message.channel.send(f"<@{user_id}> {message_text}")
                 users_to_alert_channel.append(user_id)
         except discord.Forbidden:
-            print(f"Could not send DM to {user_id}, falling back to channel message.")
+            logging.error(f"Could not send DM to {user_id}, falling back to channel message.")
             users_to_alert_channel.append(user_id)
             # await message.channel.send(f"<@{user_id}> {message_text}")
     

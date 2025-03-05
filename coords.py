@@ -4,7 +4,7 @@ from dotenv import load_dotenv # type: ignore
 load_dotenv(".env")
 API_KEY = os.getenv("AIRPORTDB_API_KEY")  # Replace with your AIRPORTDB API key
 
-
+import logging
 import sqlite3
 import json
 import requests
@@ -17,7 +17,7 @@ def get_abbr(icao):
     
     
     if result and result[0]:
-        print(result[0])
+        logging.debug(f"{result[0]}")
         conn.close()
         return tuple(result[0].split(","))  # Convert comma-separated string back to tuple
     cursor.execute("SELECT iata FROM airports WHERE icao = ?", (icao,))
@@ -36,27 +36,27 @@ def fetch_and_store_airport(icao):
     
     try:
         response = requests.get(url) #, headers=headers)
-        print(response)
+        logging.debug(f"{response}")
         response.raise_for_status()  # Raise error for bad status codes
         data = response.json()
         abbr = icao[:2]
         abbr += ","
         abbr += data["iata_code"]
-        print(data)
+        logging.debug(f"{data}")
         
         if "latitude_deg" in data and "longitude_deg" in data:
             cursor.execute("INSERT OR IGNORE INTO airports (icao, iata, latitude, longitude, abbreviations) VALUES (?, ?, ?, ?, ?)",
                            (icao, data["iata_code"], float(data["latitude_deg"]), float(data["longitude_deg"]), abbr))
             conn.commit()
-            print(f"Stored {icao} airport in the database.")
+            logging.info(f"Stored {icao} airport in the database.")
     except requests.exceptions.HTTPError as e:
-        print(f"API error: HTTP {e.response.status_code} - {e.response.reason}")
+        logging.error(f"API error: HTTP {e.response.status_code} - {e.response.reason}")
     except requests.exceptions.RequestException as e:
-        print(f"Request error: {e}")
+        logging.error(f"Request error: {e}")
     except json.JSONDecodeError:
-        print("Error: Unable to decode JSON. Response might not be valid JSON.")
+        logging.error("Error: Unable to decode JSON. Response might not be valid JSON.")
     except Exception as e:
-        print(f"Unexpected error: {e}")
+        logging.error(f"Unexpected error: {e}")
     
     conn.close()
 
@@ -72,12 +72,12 @@ def get_airport_coords(icao):
         return result  # Return existing coordinates
     
     # If not in DB, fetch and store airport data
-    print(f"Airport {icao} not found in DB, fetching from API...")
+    logging.info(f"Airport {icao} not found in DB, fetching from API...")
     fetch_and_store_airport(icao)
     
     # Try fetching again after updating the DB
     cursor.execute("SELECT latitude, longitude FROM airports WHERE icao = ?", (icao,))
     result = cursor.fetchone()
-    print(result)
+    logging.debug(f"{result}")
     conn.close()
     return result if result else None

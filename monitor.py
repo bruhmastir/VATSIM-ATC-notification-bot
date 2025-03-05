@@ -1,3 +1,4 @@
+import logging
 from dotenv import load_dotenv  # type: ignore
 import os
 import asyncio
@@ -16,7 +17,7 @@ async def monitor_airports(client, interval=60):
     while not client.is_closed():
         data = get_vatsim_data()
         if not data:
-            print("Failed to fetch VATSIM data.")
+            logging.error("Failed to fetch VATSIM data.")
         else:
             conn = sqlite3.connect("vatsim_bot.db")
             cursor = conn.cursor()
@@ -72,4 +73,4 @@ async def check_airport_status(icao, data, client):
 
     await send_alerts(icao, users_to_alert_channel, users_to_alert_dm, client, message, True)
 
-    print(icao, num_aircraft, atc_active, discord.utils.utcnow())
+    logging.debug(f"{icao} {num_aircraft} {atc_active} {discord.utils.utcnow()}")

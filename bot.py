@@ -9,17 +9,32 @@ from dotenv import load_dotenv # type: ignore
 import sys
 
 # Redirect print statements to bot.log
-log_file = open("bot_prints.log", "a", encoding="utf-8", buffering=1)  # Append mode
-sys.stdout = log_file  # Redirect standard output (print statements)
-sys.stderr = log_file  # Redirect errors
+# log_file = open("bot_prints.log", "a", encoding="utf-8", buffering=1)  # Append mode
+# sys.stdout = log_file  # Redirect standard output (print statements)
+# sys.stderr = log_file  # Redirect errors
+
+import logging
+from logging.handlers import TimedRotatingFileHandler
+
+log_handler = TimedRotatingFileHandler(
+    'bot.log',
+    when='midnight',  # Rotate daily at midnight
+    interval=1,
+    backupCount=10  # Keep 7 days' worth of logs
+)
+logging.basicConfig(
+    handlers=[log_handler],
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 # Print large ######## rows so that it is easier to differentiate runs in log
-print("############################################################################################################################")
-print("############################################################################################################################")
-print("############################################################################################################################")
-print("############################################################################################################################")
-print("############################################################################################################################")
-print("############################################################################################################################")
+logging.info("############################################################################################################################")
+logging.info("############################################################################################################################")
+logging.info("############################################################################################################################")
+logging.info("############################################################################################################################")
+logging.info("############################################################################################################################")
+logging.info("############################################################################################################################")
 
 # Load environment variables
 load_dotenv(".env")
@@ -49,13 +64,13 @@ def load_commands():
             command_name = filename[:-3]  # Remove .py extension
             module = __import__(f"commands.{command_name}", fromlist=["handle", "description", "usage"])
             commands[command_name] = module
-    print("Commands loaded dynamically.")
+    logging.info("Commands loaded dynamically.")
 
 load_commands()
 
 @client.event
 async def on_ready():
-    print(f"Logged in as {client.user}", discord.utils.utcnow())
+    logging.info(f"Logged in as {client.user} {discord.utils.utcnow()}")
     await monitor_airports(client, interval=60)
 
 @client.event
