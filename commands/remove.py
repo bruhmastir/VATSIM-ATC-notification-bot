@@ -1,9 +1,10 @@
-import discord
+import config
+import discord # type: ignore
 import sqlite3
 
 # Command metadata
 description = "Remove a registered airport from monitoring."
-usage = "!remove"
+usage = f"{config.PREFIX}remove"
 
 async def handle(message, client):
     user_id = message.author.id

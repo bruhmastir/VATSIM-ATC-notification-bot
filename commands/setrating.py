@@ -1,10 +1,11 @@
+import config
 import discord  # type: ignore
 import sqlite3
 
 # Command metadata
 description = "Set or update your ATC rating. Part of getting started"
-usage = "!setrating <S1/S2/S3/C1> (or just !setrating to choose interactively)"
-long_description = "Set or update your ATC rating. If rating (i.e. S1/S2/S3/C1) is provided with the command, as in !setrating <rating>, then the first step is skipped and it moves on to ask tier of rating(i.e. Tiear 1 or Unrestricted) and if it is Unrestricted, it asks which airports are you approved on."
+usage = f"{config.PREFIX}setrating <S1/S2/S3/C1> (or just {config.PREFIX}setrating to choose interactively)"
+long_description = f"Set or update your ATC rating. If rating (i.e. S1/S2/S3/C1) is provided with the command, as in {config.PREFIX}setrating <rating>, then the first step is skipped and it moves on to ask tier of rating(i.e. Tiear 1 or Unrestricted) and if it is Unrestricted, it asks which airports are you approved on."
 
 VALID_RATINGS = {"S1", "S2", "S3", "C1"}
 
@@ -13,7 +14,7 @@ async def handle(message, client):
     conn = sqlite3.connect("vatsim_bot.db")
     cursor = conn.cursor()
 
-    # Extract rating from command if provided (e.g., "!setrating S3")
+    # Extract rating from command if provided (e.g., f"{config.PREFIX}setrating S3")
     parts = message.content.split()
     if len(parts) > 1:
         rating = parts[1].strip().upper()

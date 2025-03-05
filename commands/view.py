@@ -1,3 +1,4 @@
+import config
 import discord  # type: ignore
 import sqlite3
 import random
@@ -5,7 +6,7 @@ from discord.ui import View, Button  # type: ignore
 
 # Command metadata
 description = "View your registered airports, thresholds, quiet hours, rating information, and opted-out positions."
-usage = "!view"
+usage = f"{config.PREFIX}view"
 
 # Randomized colors for embeds
 EMBED_COLORS = [discord.Color.blue(), discord.Color.green(), discord.Color.purple(), discord.Color.orange(), discord.Color.teal()]
@@ -61,7 +62,12 @@ class ViewPreferences(View):
         return True
 
 async def handle(message, client):
-    user_id = message.author.id
+    args = message.content.split()
+    self_check = len(args) == 1 or(len(args) > 1 and message.mentions and message.mentions[0].id == message.author.id)
+    user_id = message.mentions[0].id if message.mentions else message.author.id
+    if not message.mentions and len(args) > 1:
+        await message.channel.send(f"❌ **Incorrect usage. Correct usage: `{usage}`\n       For more details, check `{config.PREFIX}help view`**")
+        return
     conn = sqlite3.connect("vatsim_bot.db")
     cursor = conn.cursor()
 
@@ -75,12 +81,19 @@ async def handle(message, client):
     # Fetch user ATC rating
     cursor.execute("SELECT atc_rating, tier, unrestricted_airports FROM user_ratings WHERE user_id = ?", (user_id,))
     rating_info = cursor.fetchone()
-    print(rating_info)
     user_rating_info = rating_info if rating_info else "Not Set"
     print(user_rating_info)
-    user_rating = user_rating_info[0]
+    user_rating = user_rating_info[0] if user_rating_info != "Not Set" else None
     tier = user_rating_info[1]
     unrestricted_airports = user_rating_info[2] if user_rating_info[2] else "All"
+    if "," in unrestricted_airports:
+        airports = ""
+        for letter in unrestricted_airports:
+            if letter == ",":
+                airports += " , "
+            else:
+                airports += letter
+        unrestricted_airports = airports
 
     # Fetch user quiet hours
     cursor.execute("SELECT start_time, end_time FROM user_quiet_hours WHERE user_id = ?", (user_id,))
@@ -102,7 +115,7 @@ async def handle(message, client):
 
     # If no registrations exist, return an error message
     if not registered_airports and not user_rating:
-        await message.channel.send("❌ **You have not registered any airports or set your ATC rating.**")
+        await message.channel.send("❌ **You have not registered any airports or set your ATC rating.**" if self_check else "❌ **This user has not registered any airports or set his/her ATC rating.**")
         return
 
     # Pagination setup
@@ -112,7 +125,7 @@ async def handle(message, client):
     # ✅ First Page: General Information
     embed = discord.Embed(title="🛫 __**YOUR ATC MONITORING PREFERENCES**__", color=discord.Color.gold())
     embed.add_field(name="🎖️ __**ATC Rating**__", value=f"**{user_rating}**", inline=True)
-    embed.add_field(name="🎖️ __**ATC Rating Tier**__", value=f"**{user_rating}**", inline=True)
+    embed.add_field(name="🎖️ __**ATC Rating Tier**__", value=f"**{tier}**", inline=True)
     embed.add_field(name="📊 __**Approved Airports**__", value=f"**{unrestricted_airports}**", inline=False)
     embed.add_field(name="📊 __**Registered Airports**__", value=f"**{len(registered_airports)}**", inline=True)
     embed.add_field(name="🚫 __**Airports with Opt-Outs**__", value=f"**{opt_out_count}**", inline=True)
@@ -143,12 +156,11 @@ async def handle(message, client):
         pages.append(embed)
 
     # ✅ Opt-Out Page
-    if opted_out_positions:
-        embed = discord.Embed(title="🚫 __**OPTED-OUT POSITIONS**__", color=discord.Color.red())
-        opt_out_text = "\n".join(f"**{icao}** → __{', '.join(positions[icao])}__" for icao in positions)
-        embed.add_field(name="Excluded Facilities", value=opt_out_text, inline=False)
-        embed.set_footer(text=f"Page {current_page + 2}/{total_pages}")
-        pages.append(embed)
+    embed = discord.Embed(title="🚫 __**OPTED-OUT POSITIONS**__", color=discord.Color.red())
+    opt_out_text = "\n".join(f"**{icao}** → __{', '.join(positions[icao])}__" for icao in positions) if opted_out_positions else "None"
+    embed.add_field(name="Excluded Facilities", value=opt_out_text, inline=False)
+    embed.set_footer(text=f"Page {current_page + 2}/{total_pages}")
+    pages.append(embed)
 
     # Send paginated message
     view = ViewPreferences(pages, user_id)

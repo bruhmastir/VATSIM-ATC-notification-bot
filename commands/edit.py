@@ -1,3 +1,4 @@
+import config
 import discord  # type: ignore
 import sqlite3
 from config import SUPPORTED_AIRPORTS  # Import supported airports from config.py
@@ -5,7 +6,7 @@ from config import SUPPORTED_AIRPORTS  # Import supported airports from config.p
 # Command metadata
 description = "Edit an existing airport registration."
 long_description = "Edit your preferences for one of your registered airports. If invalid input, process cancels. [ICAO] is optional argument which can help you skip the first step."
-usage = "!edit [ICAO]"
+usage = f"{config.PREFIX}edit [ICAO]"
 
 async def handle(message, client):
     user_id = message.author.id

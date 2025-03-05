@@ -1,3 +1,4 @@
+import config
 import discord # type: ignore
 import asyncio
 import os
@@ -37,7 +38,7 @@ client = discord.Client(intents=intents)
 
 # Dynamically load command modules
 commands = {}
-command_prefix = "!"
+command_prefix = f"{config.PREFIX}"
 command_dir = "commands"
 
 def load_commands():

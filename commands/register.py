@@ -1,10 +1,11 @@
+import config
 import discord  # type: ignore
 import sqlite3
 from config import SUPPORTED_AIRPORTS  # Import supported airports from config.py
 
 # Command metadata
 description = "Register an airport for monitoring and set thresholds. Requires ATC rating to be set first."
-usage = "!register <ICAO> [Primary] [Staff Up] [Cooldown] [Alert Preference] [Support Threshold]"
+usage = f"{config.PREFIX}register <ICAO> [Primary] [Staff Up] [Cooldown] [Alert Preference] [Support Threshold]"
 
 def is_valid_number(value):
     try:
@@ -21,7 +22,7 @@ async def handle(message, client):
     cursor.execute("SELECT atc_rating FROM user_ratings WHERE user_id = ?", (user_id,))
     user_rating = cursor.fetchone()
     if not user_rating:
-        await message.channel.send("You must set your ATC rating first using !setrating before registering an airport.")
+        await message.channel.send(f"You must set your ATC rating first using {config.PREFIX}setrating before registering an airport.")
         conn.close()
         return
 

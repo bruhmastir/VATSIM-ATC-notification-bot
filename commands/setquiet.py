@@ -1,9 +1,10 @@
-import discord
+import config
+import discord # type: ignore
 import sqlite3
 
 # Command metadata
 description = "Set or update your quiet hours."
-usage = "!setquiet"
+usage = f"{config.PREFIX}setquiet"
 
 async def handle(message, client):
     user_id = message.author.id

@@ -28,7 +28,7 @@ SECOND_HIGHEST_CONTROL = {
 async def handle(message, client):
     user_id = message.author.id
     time = discord.utils.utcnow()
-    args = message.content.split()[1:]  # Extract arguments after "!supportme"
+    args = message.content.split()[1:]  # Extract arguments after f"{config.PREFIX}supportme"
 
     # ✅ Ensure user has an ATC rating set
     conn = sqlite3.connect("vatsim_bot.db")
@@ -36,14 +36,14 @@ async def handle(message, client):
     cursor.execute("SELECT atc_rating FROM user_ratings WHERE user_id = ?", (user_id,))
     user_rating = cursor.fetchone()
     if not user_rating:
-        await message.channel.send("You have not set your ATC rating. Use !setrating first.")
+        await message.channel.send(f"You have not set your ATC rating. Use {config.PREFIX}setrating first.")
         conn.close()
         return
     user_rating = user_rating[0]
 
     # ✅ Validate ICAO argument
     if len(args) < 1:
-        await message.channel.send("Usage: `!supportme <ICAO> [Facility] [-b]` where entries in [] are optional")
+        await message.channel.send(f"Usage: `{config.PREFIX}supportme <ICAO> [Facility] [-b]` where entries in [] are optional")
         conn.close()
         return
     icao = args[0].strip().upper()

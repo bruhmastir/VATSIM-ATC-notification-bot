@@ -1,3 +1,4 @@
+import config
 import discord  # type: ignore
 import os
 import importlib
@@ -6,7 +7,7 @@ from config import PREFIX  # Import bot prefix from config.py
 
 # Command metadata
 description = "Show available commands and their usage."
-usage = "!help"
+usage = f"{config.PREFIX}help"
 
 class HelpView(View):
     def __init__(self, commands_info, page=0):

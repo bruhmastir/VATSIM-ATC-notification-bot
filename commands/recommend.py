@@ -8,7 +8,7 @@ import coords
 # Command metadata
 description = "Recommend airports where you can control based on traffic and active ATC."
 long_description = "Recommends 5 airports where you can control based on the currently active ATC positions and live VATSIM traffic, and sorts them by traffic first, then by highest unoccupied position that you can control."
-usage = "!recommend"
+usage = f"{config.PREFIX}recommend"
 
 async def handle(message, client):
     user_id = message.author.id
@@ -20,7 +20,7 @@ async def handle(message, client):
     rating_data = cursor.fetchone()
     
     if not rating_data:
-        await message.channel.send("❌ **You have not set your ATC rating. Use `!setrating` first.**")
+        await message.channel.send(f"❌ **You have not set your ATC rating. Use `{config.PREFIX}setrating` first.**")
         conn.close()
         return
 
@@ -57,12 +57,12 @@ async def handle(message, client):
                 if icao not in allowed_airports:
                     continue  # Skip this airport
             else:
-                message.channel.send("You have no approved airports set. Please use !setrating to set your rating and approved airports")
+                message.channel.send(f"You have no approved airports set. Please use {config.PREFIX}setrating to set your rating and approved airports")
                 
 
         # Get airport traffic
         airport_lat, airport_lon = coords.get_airport_coords(icao)
-        num_aircraft = monitor.get_num_departures(icao)
+        num_aircraft = monitor.get_num_aircraft(icao)
 
         # Get active ATC at the airport
         atc_units = [c["callsign"] for c in data["controllers"] if icao in c["callsign"]]
