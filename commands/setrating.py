@@ -69,10 +69,36 @@ async def handle(message, client):
         await message.channel.send("Invalid ATC rating. Please enter one of: S1, S2, S3, C1.")
         conn.close()
         return
+    
+    # Tiers 
+    await message.channel.send("Choose your rating type: `T1` for Tier 1 (any airport) or `U` for Unrestricted (specific airports)")
+    tier_response = await client.wait_for("message", check=check)
+    response_tier = tier_response.content.strip().title()
+
+    if response_tier.upper() not in ["T1", "U"]:
+        await message.channel.send("Invalid choice. Please type `T1` for Tier 1 or `U` for Unrestricted.")
+        return
+
+    unrestricted_airports = None
+    if response_tier == "U":
+        tier = "Unrestricted"
+        await message.channel.send("Enter the ICAO codes of the airports you can control, separated by commas:")
+        airport_response = await client.wait_for("message", check=check)
+        unrestricted_airports = airport_response.content.strip().upper()
+    else:
+        tier = "Tier 1"
+
+    cursor.execute("UPDATE user_ratings SET tier = ?, unrestricted_airports = ? WHERE user_id = ?",
+                   (tier, unrestricted_airports, user_id))
+    conn.commit()
+
 
     # Save to database
     cursor.execute("REPLACE INTO user_ratings (user_id, atc_rating) VALUES (?, ?)", (user_id, rating))
+    cursor.execute("UPDATE user_ratings SET tier = ?, unrestricted_airports = ? WHERE user_id = ?",
+                   (tier, unrestricted_airports, user_id))
     conn.commit()
+
     conn.close()
 
-    await message.channel.send(f"Your ATC rating has been set to {rating}.")
+    await message.channel.send(f"Your ATC rating has been set to {rating}, {tier}{f', {unrestricted_airports}' if tier == 'Unrestricted' else ''}.")
