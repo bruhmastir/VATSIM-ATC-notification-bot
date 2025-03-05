@@ -71,6 +71,8 @@ load_commands()
 @client.event
 async def on_ready():
     logging.info(f"Logged in as {client.user} {discord.utils.utcnow()}")
+    owner = await client.fetch_user(OWNER_ID)
+    await owner.send(f"Logged in as {client.user} {discord.utils.utcnow()}")
     await monitor_airports(client, interval=60)
 
 @client.event
