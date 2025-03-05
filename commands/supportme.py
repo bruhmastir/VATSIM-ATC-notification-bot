@@ -6,6 +6,11 @@ import config
 from monitor import get_num_aircraft
 from alerts import check_quiet_hours, send_alerts
 
+# Command metadata
+description = "Request support from other controllers"
+usage = f"{config.PREFIX}supportme [ICAO] [Facility]"
+long_description = f"{description}. If you do not provide arguments, you will interactively request support and you can NOT choose a facility. Provide [ICAO] and [Facility] arguments for better results. If you do not select a facility, the second highest position that you can control is what will be the basis for the alerts sent to eevryone. For example, if an S3 requests support without facility specification, S2 and above will be alerted. All alerts require that minimum traffic of the amount of the alerted user's support threshold that was set during registration(and could have been edited through {config.PREFIX}edit)"
+
 
 # ATC Facility Hierarchy
 FACILITY_HIERARCHY = {

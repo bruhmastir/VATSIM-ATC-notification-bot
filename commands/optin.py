@@ -3,7 +3,7 @@ import sqlite3
 import config
 
 
-description = "Remove opt-out settings and receive alerts for specific ATC positions again."
+description = "Remove opt-in again to receive alerts for specific ATC positions again."
 usage = f"{config.PREFIX}optin <ICAO> <position1> [position2] ..."
 
 # ✅ Ensure table exists on startup
