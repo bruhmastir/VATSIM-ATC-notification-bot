@@ -42,6 +42,17 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES user_ratings(user_id)
         )
     """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_cooldowns (
+            user_id INTEGER,
+            icao TEXT,
+            last_alert TIMESTAMP,
+            PRIMARY KEY (user_id, icao),
+            FOREIGN KEY (user_id) REFERENCES user_ratings(user_id)
+        )
+    """)
+
     
     conn.commit()
     conn.close()

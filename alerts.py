@@ -56,19 +56,54 @@ def get_users_to_alert(icao, num_aircraft, missing_atc, is_any_atc_active, is_so
     conn.close()
     return users_to_alert_channel, users_to_alert_dm, message
 
-async def check_cooldown(user_id, icao, time):
+# async def check_cooldown(user_id, icao, time):
+#     conn = sqlite3.connect("vatsim_bot.db")
+#     cursor = conn.cursor()
+#     key = (user_id, icao)
+#     cooldown_active = False
+#     if key in alert_cooldowns:
+#         cursor.execute("SELECT cooldown FROM user_preferences WHERE icao = ? AND user_id = ?", (icao, user_id))
+#         response = cursor.fetchone()
+#         cooldown = response[0]
+#         last_alert_time = alert_cooldowns[key]
+#         cooldown_active = (time - last_alert_time).total_seconds() < cooldown * 60
+#     conn.close()
+#     return cooldown_active
+
+
+from datetime import datetime, timedelta
+
+async def check_cooldown(user_id, icao):
+    """Check if a cooldown is active for a user at an airport."""
     conn = sqlite3.connect("vatsim_bot.db")
     cursor = conn.cursor()
-    key = (user_id, icao)
-    cooldown_active = False
-    if key in alert_cooldowns:
-        cursor.execute("SELECT cooldown FROM user_preferences WHERE icao = ? AND user_id = ?", (icao, user_id))
-        response = cursor.fetchone()
-        cooldown = response[0]
-        last_alert_time = alert_cooldowns[key]
-        cooldown_active = (time - last_alert_time).total_seconds() < cooldown * 60
+
+    cursor.execute("SELECT last_alert FROM user_cooldowns WHERE user_id = ? AND icao = ?", (user_id, icao))
+    result = cursor.fetchone()
+
+    if result:
+        last_alert_time = datetime.strptime(result[0], "%Y-%m-%d %H:%M:%S")
+        cursor.execute("SELECT cooldown FROM user_preferences WHERE user_id = ? AND icao = ?", (user_id, icao))
+        cooldown = cursor.fetchone()[0]
+
+        if (datetime.utcnow() - last_alert_time).total_seconds() < cooldown * 60:
+            conn.close()
+            return True  # Cooldown is still active
+
     conn.close()
-    return cooldown_active
+    return False  # No active cooldown
+
+async def set_cooldown(user_id, icao):
+    """Update the cooldown timestamp in the database."""
+    conn = sqlite3.connect("vatsim_bot.db")
+    cursor = conn.cursor()
+
+    now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    cursor.execute("REPLACE INTO user_cooldowns (user_id, icao, last_alert) VALUES (?, ?, ?)", (user_id, icao, now))
+
+    conn.commit()
+    conn.close()
+
 
 async def check_quiet_hours(user_id, time):
     conn = sqlite3.connect("vatsim_bot.db")
@@ -110,15 +145,24 @@ async def send_alerts(icao, users_to_alert_channel, users_to_alert_dm, client, m
             users_to_alert.remove(user_id)
             if user_id in users_to_alert_channel:
                 users_to_alert_channel.remove(user_id)
-            else:
+            elif user_id in users_to_alert_dm:
                 users_to_alert_dm.remove(user_id)
 
 
-        alert_cooldowns[key] = time
+        # alert_cooldowns[key] = time
 
 
     if users_to_alert_channel or users_to_alert_dm:
         logging.debug("send_alerts fired after cooldown and quiet hours checking")
+
+    for user_id in users_to_alert_dm:
+        user = await client.fetch_user(user_id)
+        try:
+            await user.send(message)
+            logging.info(f"Sent alert about {icao} to {user_id} via DMs")
+        except discord.Forbidden:
+            logging.error(f"Could not DM {user_id}. Defaulting back to alerting on channel")
+            users_to_alert_channel.append(user_id)
 
     if users_to_alert_channel:
         channel = await client.fetch_channel(int(os.getenv("DISCORD_CHANNEL_ID")))
@@ -128,10 +172,4 @@ async def send_alerts(icao, users_to_alert_channel, users_to_alert_dm, client, m
             logging.debug(f"{await monitor.get_atc_units(icao)}")
             await channel.send(f"{message} {mentions}")
 
-    for user_id in users_to_alert_dm:
-        user = await client.fetch_user(user_id)
-        try:
-            await user.send(message)
-            logging.info(f"Sent alert about {icao} to {user_id} via DMs")
-        except discord.Forbidden:
-            logging.error(f"Could not DM {user_id}.")
+    await set_cooldown(user_id, icao)
