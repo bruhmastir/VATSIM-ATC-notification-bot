@@ -10,6 +10,7 @@ test.py
 __pycache__/
 commands/__pycache__/
 depreciated commands/
+extras/
 
 # Ignore all `.env` files
 .env
