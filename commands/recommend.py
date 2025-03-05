@@ -1,11 +1,13 @@
 import config
 import discord  # type: ignore
 import sqlite3
+import monitor
 from vatsim import get_vatsim_data
 import coords
 
 # Command metadata
 description = "Recommend airports where you can control based on traffic and active ATC."
+long_description = "Recommends 5 airports where you can control based on the currently active ATC positions and live VATSIM traffic, and sorts them by traffic first, then by highest unoccupied position that you can control."
 usage = "!recommend"
 
 async def handle(message, client):
@@ -46,10 +48,6 @@ async def handle(message, client):
 
     # Process airport traffic & ATC coverage
     for airport in config.SUPPORTED_AIRPORTS:
-        # icao = airport.get("flight_plan", {}).get("departure")
-        # if not icao:
-        #     continue
-        print(airport, "----------------------------------------------------------------")
         icao = airport
 
         # If user is Unrestricted, skip airports they are not allowed to control
@@ -64,12 +62,7 @@ async def handle(message, client):
 
         # Get airport traffic
         airport_lat, airport_lon = coords.get_airport_coords(icao)
-        num_aircraft = sum(
-            1 for p in data["pilots"]
-            if p.get("groundspeed", 1) <= 40
-            and abs(p.get("latitude", 0) - airport_lat) < 0.1
-            and abs(p.get("longitude", 0) - airport_lon) < 0.1
-        )
+        num_aircraft = monitor.get_num_departures(icao)
 
         # Get active ATC at the airport
         atc_units = [c["callsign"] for c in data["controllers"] if icao in c["callsign"]]
