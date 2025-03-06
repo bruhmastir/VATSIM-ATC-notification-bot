@@ -6,6 +6,7 @@ import sqlite3
 description = "Set or update your quiet hours."
 usage = f"{config.PREFIX}setquiet"
 long_description = f"{description} Quiet hours are times during which you do NOT want ANY alerts. Use {usage} and keep in mind that the format is HH:MM-HH:MM."
+quickstart_optional = True
 
 async def handle(message, client):
     user_id = message.author.id

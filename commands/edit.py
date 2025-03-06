@@ -7,6 +7,7 @@ from config import SUPPORTED_AIRPORTS  # Import supported airports from config.p
 description = "Edit an existing airport registration."
 long_description = "Edit your preferences for one of your registered airports. If invalid input, process cancels. [ICAO] is optional argument which can help you skip the first step."
 usage = f"{config.PREFIX}edit [ICAO]"
+quickstart_optional = True
 
 async def handle(message, client):
     user_id = message.author.id

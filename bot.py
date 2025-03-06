@@ -1,3 +1,4 @@
+from alerts import send_errors
 import config
 import discord # type: ignore
 import asyncio
@@ -41,6 +42,7 @@ load_dotenv(".env")
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 CHANNEL_ID = int(os.getenv("DISCORD_CHANNEL_ID"))
 OWNER_ID = int(os.getenv("BOT_OWNER_ID"))  # Bot owner ID
+BOT_STATUS_CHANNEL_ID = int(os.getenv("BOT_STATUS_CHANNEL_ID"))
 
 # Initialize database
 init_db()
@@ -71,8 +73,9 @@ load_commands()
 @client.event
 async def on_ready():
     logging.info(f"Logged in as {client.user} {discord.utils.utcnow()}")
-    owner = await client.fetch_user(OWNER_ID)
-    await owner.send(f"Logged in as {client.user} {discord.utils.utcnow()}")
+    bot_status_channel = await client.fetch_channel(BOT_STATUS_CHANNEL_ID)
+    await bot_status_channel.send(f"**Bot online at {discord.utils.utcnow()} UTC.**\nPlease note that seeing this message does not mean the bot was offline. The Discord API may change the connection anytime, thus generating this message.")
+
     await monitor_airports(client, interval=60)
 
 @client.event
@@ -93,6 +96,17 @@ async def on_message(message):
         if command_name in commands:
             importlib.reload(commands[command_name])
             await commands[command_name].handle(message, client)
+
+@client.event
+async def on_error(event, *args, **kwargs):
+    logging.error(f"Error in {event}: {sys.exc_info()}")
+    await send_errors(event, client, sys.exc_info())
+
+@client.event
+async def on_disconnect():
+    logging.error(f"Bot disconnected at {discord.utils.utcnow()}")
+    bot_status_channel = await client.fetch_channel(BOT_STATUS_CHANNEL_ID)
+    await bot_status_channel.send(f"Bot disconnected at {discord.utils.utcnow()} UTC")
 
 # Start the bot
 client.run(TOKEN)

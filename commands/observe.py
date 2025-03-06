@@ -12,6 +12,7 @@ from alerts import send_alerts
 description = "Get notified and observe your training facility when it comes online."
 usage = f"{config.PREFIX}observe <duration_in_hours>"
 long_description = f"{description} You must have set a training plan before using this command as it specifies which airport and position to track."
+quickstart_optional = True
 
 # Facility mapping based on training level
 TRAINING_FACILITIES = {

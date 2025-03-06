@@ -6,6 +6,7 @@ import sqlite3
 description = "Remove a registered airport from monitoring."
 usage = f"{config.PREFIX}remove [ICAO 1] [ICAO 2] [ICAO 3]..."
 long_description = f"Remove a registered airport from monitoring. You can use {config.PREFIX}remove to remove one by one interactively, or you can use {usage} to remove as many airports as you want immediately."
+quickstart_optional = True
 
 async def handle(message, client):
     user_id = message.author.id

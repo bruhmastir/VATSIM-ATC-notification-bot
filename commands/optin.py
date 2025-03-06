@@ -5,6 +5,7 @@ import config
 
 description = "Remove opt-in again to receive alerts for specific ATC positions again."
 usage = f"{config.PREFIX}optin <ICAO> <position1> [position2] ..."
+quickstart_optional = True
 
 # ✅ Ensure table exists on startup
 def setup_database():

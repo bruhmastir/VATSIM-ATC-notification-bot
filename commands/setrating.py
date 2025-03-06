@@ -6,6 +6,7 @@ import sqlite3
 description = "Set or update your ATC rating. Part of getting started"
 usage = f"{config.PREFIX}setrating <S1/S2/S3/C1> (or just {config.PREFIX}setrating to choose interactively)"
 long_description = f"Set or update your ATC rating. If rating (i.e. S1/S2/S3/C1) is provided with the command, as in {config.PREFIX}setrating <rating>, then the first step is skipped and it moves on to ask tier of rating(i.e. Tiear 1 or Unrestricted) and if it is Unrestricted, it asks which airports are you approved on."
+quickstart_optional = False
 
 VALID_RATINGS = {"S1", "S2", "S3", "C1"}
 

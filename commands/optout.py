@@ -4,6 +4,7 @@ import config
 
 description = "Opt out of receiving alerts for specific ATC positions at an airport."
 usage = f"{config.PREFIX}optout <ICAO> <position1> [position2] ..."
+quickstart_optional = True
 
 VALID_POSITIONS = {"DEL", "GND", "TWR", "APP", "DEP", "CTR"}
 

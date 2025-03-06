@@ -8,6 +8,7 @@ from discord.ui import View, Button  # type: ignore
 # Command metadata
 description = "View your registered airports, thresholds, quiet hours, rating information, and opted-out positions."
 usage = f"{config.PREFIX}view"
+quickstart_optional = False
 
 # Randomized colors for embeds
 EMBED_COLORS = [discord.Color.blue(), discord.Color.green(), discord.Color.purple(), discord.Color.orange(), discord.Color.teal()]

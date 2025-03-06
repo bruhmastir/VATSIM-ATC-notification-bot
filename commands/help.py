@@ -6,8 +6,9 @@ from discord.ui import View, Button  # type: ignore
 from config import PREFIX  # Import bot prefix from config.py
 
 # Command metadata
-description = "Show available commands and their usage."
-usage = f"{config.PREFIX}help"
+description = "Show available commands and their usage or get help about a specific command."
+usage = f"{config.PREFIX}help [command]"
+quickstart_optional = False
 
 class HelpView(View):
     def __init__(self, commands_info, page=0):
@@ -21,12 +22,10 @@ class HelpView(View):
     def update_buttons(self):
         """Dynamically update buttons based on the current page."""
         self.clear_items()
-        if self.page > 0:
-            self.add_item(Button(label="⏮️ First", style=discord.ButtonStyle.primary, custom_id="first"))
-            self.add_item(Button(label="⬅️ Previous", style=discord.ButtonStyle.primary, custom_id="prev"))
-        if self.page < self.total_pages - 1:
-            self.add_item(Button(label="Next ➡️", style=discord.ButtonStyle.primary, custom_id="next"))
-            self.add_item(Button(label="Last ⏭️", style=discord.ButtonStyle.primary, custom_id="last"))
+        self.add_item(Button(label="⏮️ First", style=discord.ButtonStyle.primary, custom_id="first", disabled=self.page == 0))
+        self.add_item(Button(label="⬅️ Previous", style=discord.ButtonStyle.primary, custom_id="prev", disabled=self.page == 0))
+        self.add_item(Button(label="Next ➡️", style=discord.ButtonStyle.primary, custom_id="next", disabled=self.page == self.total_pages - 1))
+        self.add_item(Button(label="Last ⏭️", style=discord.ButtonStyle.primary, custom_id="last", disabled=self.page == self.total_pages - 1))
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Handles button interactions."""
@@ -70,6 +69,7 @@ async def handle(message, client):
             command_usage = getattr(module, "usage", f"{PREFIX}{command_name}")
             long_description = getattr(module, "long_description", command_desc)
             commands_info.append((command_name, command_desc, command_usage, long_description))  # ✅ Flattened tuple format
+            commands_info.sort()
 
     args = message.content.split()
 

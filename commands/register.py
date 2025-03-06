@@ -6,6 +6,7 @@ from config import SUPPORTED_AIRPORTS  # Import supported airports from config.p
 # Command metadata
 description = "Register an airport for monitoring and set thresholds. Requires ATC rating to be set first."
 usage = f"{config.PREFIX}register <ICAO> [Primary] [Staff Up] [Cooldown] [Alert Preference] [Support Threshold]"
+quickstart_optional = False
 
 def is_valid_number(value):
     try:
@@ -59,7 +60,7 @@ async def handle(message, client):
     # ✅ Primary threshold
     primary_threshold = int(args[1]) if len(args) == 6 and is_valid_number(args[1]) else None
     while primary_threshold is None:
-        await message.channel.send(f"Set primary threshold for {icao}:")
+        await message.channel.send(f"The primary threshold is the minimum number of aircraft that should be on the ground for you to receive an alert.\n**Set primary threshold for {icao}:**")
         response = await client.wait_for("message", check=check)
         if response.content.strip().upper() == "CANCEL":
             await message.channel.send("Registration process cancelled.")
@@ -73,7 +74,7 @@ async def handle(message, client):
     # ✅ Staff Up threshold (Must be ≥ Primary threshold)
     staff_up_threshold = int(args[2]) if len(args) == 6 and is_valid_number(args[2]) else None
     while staff_up_threshold is None or staff_up_threshold < primary_threshold:
-        await message.channel.send(f"Set staff up threshold for {icao} (must be ≥ {primary_threshold}):")
+        await message.channel.send(f"The staff up threshold is the minimum number of aircraft that should be on the ground when another ATC facility is online for you to receive and alert.\n**Set staff up threshold for {icao} (must be ≥ {primary_threshold}):**")
         response = await client.wait_for("message", check=check)
         if response.content.strip().upper() == "CANCEL":
             await message.channel.send("Registration process cancelled.")
@@ -87,7 +88,7 @@ async def handle(message, client):
     # ✅ Cooldown time
     cooldown = int(args[3]) if len(args) == 6 and is_valid_number(args[3]) else None
     while cooldown is None:
-        await message.channel.send(f"Set cooldown time in minutes for {icao}:")
+        await message.channel.send(f"The cooldown is the minimum amount of time that should pass before you receive a new alert about the same airport.\n**Set cooldown time in minutes for {icao}:**")
         response = await client.wait_for("message", check=check)
         if response.content.strip().upper() == "CANCEL":
             await message.channel.send("Registration process cancelled.")
@@ -117,7 +118,7 @@ async def handle(message, client):
     # ✅ Support threshold
     support_threshold = int(args[5]) if len(args) == 6 and is_valid_number(args[5]) else None
     while support_threshold is None:
-        await message.channel.send(f"Set support threshold for {icao}:")
+        await message.channel.send(f"The support threshold is the minimum number of aircraft that should be on the ground for you to receive an alert when someone uses {config.PREFIX}supportme \n**Set support threshold for {icao}:**")
         response = await client.wait_for("message", check=check)
         if response.content.strip().upper() == "CANCEL":
             await message.channel.send("Registration process cancelled.")

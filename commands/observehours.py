@@ -11,6 +11,7 @@ from alerts import send_alerts
 description = "Get notified and observe your training facility during specific hours."
 usage = f"{config.PREFIX}observehours <start_time> <end_time>"
 long_description = f"{description} You must have set a training plan before using this command. Time format: HH:MM (UTC)."
+quickstart_optional = True
 
 TRAINING_FACILITIES = {
     "S1": "GND",
