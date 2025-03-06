@@ -57,11 +57,16 @@ def get_users_to_alert(icao, num_aircraft, missing_atc, is_any_atc_active, is_so
             allowed_airports = unrestricted_airports.split(",") if unrestricted_airports else []
             if icao not in allowed_airports:
                 continue  # Skip alert if the user can't control this airport
+    
+    
+        time = discord.utils.utcnow()
+
+        is_in_quiet_hours = check_quiet_hours(user_id, time)
         
         should_alert = any(
             atc_rating == config.ATC_RATING_CONVERSIONS[missing_facility] and missing_facility not in opted_out_positions
             for missing_facility in missing_atc
-        ) and ((is_some_atc_missing and num_aircraft >= staff_up_threshold) or (num_aircraft >= primary_threshold and not is_any_atc_active))
+        ) and ((is_some_atc_missing and num_aircraft >= staff_up_threshold) or (num_aircraft >= primary_threshold and not is_any_atc_active)) and not is_in_quiet_hours
 
         if should_alert:
 
@@ -111,7 +116,7 @@ async def set_cooldown(user_id, icao):
     conn.close()
 
 
-async def check_quiet_hours(user_id, time):
+def check_quiet_hours(user_id, time):
     conn = sqlite3.connect("vatsim_bot.db")
     cursor = conn.cursor()
 
@@ -133,6 +138,7 @@ async def check_quiet_hours(user_id, time):
     if response:
         conn.close()
         return in_between(time, response[1], response[2])
+    conn.close()
 
 # ✅ Send alerts to users
 async def send_alerts(icao, users_to_alert_channel, users_to_alert_dm, client, message, is_cooldown=False):

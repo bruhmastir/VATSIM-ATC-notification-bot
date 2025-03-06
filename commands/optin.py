@@ -7,23 +7,6 @@ description = "Remove opt-in again to receive alerts for specific ATC positions 
 usage = f"{config.PREFIX}optin <ICAO> <position1> [position2] ..."
 quickstart_optional = True
 
-# ✅ Ensure table exists on startup
-def setup_database():
-    conn = sqlite3.connect("vatsim_bot.db")
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS user_opt_outs (
-            user_id INTEGER,
-            icao TEXT,
-            position TEXT,
-            PRIMARY KEY (user_id, icao, position),
-            FOREIGN KEY (user_id) REFERENCES user_ratings(user_id)
-        )
-    """)
-    conn.commit()
-    conn.close()
-
-setup_database()
 
 async def handle(message, client):
     user_id = message.author.id

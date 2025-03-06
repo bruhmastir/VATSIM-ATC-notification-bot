@@ -145,6 +145,7 @@ async def handle(message, client):
     await message.channel.send("Do you want to add another airport? (yes/no)")
     add_more_response = await client.wait_for("message", check=check)
     if add_more_response.content.lower() == "yes":
+        conn.close()
         await handle(message, client)  # Restart for new airport
     else:
         await message.channel.send("Registration complete!")

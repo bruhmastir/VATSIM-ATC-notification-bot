@@ -128,17 +128,3 @@ def get_training_info(user_id):
     conn.close()
     return result
 
-# def save_observehours(user_id, start_time, end_time):
-#     conn = sqlite3.connect("vatsim_bot.db")
-#     cursor = conn.cursor()
-#     cursor.execute("""
-#         CREATE TABLE IF NOT EXISTS user_observe_hours (
-#             user_id INTEGER PRIMARY KEY,
-#             start_time TEXT,
-#             end_time TEXT,
-#             FOREIGN KEY (user_id) REFERENCES user_training(user_id)
-#         )
-#     """)
-#     cursor.execute("REPLACE INTO user_observe_hours (user_id, start_time, end_time) VALUES (?, ?, ?)", (user_id, start_time, end_time))
-#     conn.commit()
-#     conn.close()

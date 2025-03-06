@@ -76,4 +76,4 @@ def init_db():
 
 if __name__ == "__main__":
     init_db()
-    logging.info("Database initialized.")
+    logging.info("Databases initialized.")
