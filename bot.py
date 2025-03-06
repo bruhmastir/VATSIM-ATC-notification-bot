@@ -41,7 +41,7 @@ logging.info("##################################################################
 load_dotenv(".env")
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 CHANNEL_ID = int(os.getenv("DISCORD_CHANNEL_ID"))
-OWNER_ID = int(os.getenv("BOT_OWNER_ID"))  # Bot owner ID
+OWNER_ID = int(os.getenv("BOT_OWNER_ID"))
 BOT_STATUS_CHANNEL_ID = int(os.getenv("BOT_STATUS_CHANNEL_ID"))
 
 # Initialize database

@@ -6,12 +6,12 @@ import config
 import discord # type: ignore
 import monitor  # type: ignore
 
-DEVELOPER_ROLE_ID = int(os.getenv("BOT_OWNER_ID"))  # Bot owner ID
+DEVELOPER_ROLE_ID = int(os.getenv("DEVELOPER_ROLE_ID"))  # Bot owner ID
 FORUM_CHANNEL_ID = int(os.getenv("FORUM_CHANNEL_ID"))
 
 async def get_developer_role(client):
-    global owner
-    owner = await client.fetch_user(DEVELOPER_ROLE_ID) #TODO: Change this to fetch the role
+    global developer
+    developer = await client.get_role(DEVELOPER_ROLE_ID) #TODO: Change this to fetch the role
 
 async def get_tag_by_name(channel: discord.ForumChannel, tag_name: str):
     """Finds a tag in a forum channel by its name."""
@@ -26,7 +26,7 @@ async def send_errors(message, client, error):
     forum = await client.fetch_channel(FORUM_CHANNEL_ID)
     get_developer_role(client)
     bot_report_tag = await get_tag_by_name(forum, "Error raised by bot")
-    mention = f"{owner.mention}"
+    mention = f"{developer.mention}"
     embed = discord.Embed(title=f"Error report: {message}", description=f"Description: {error}", color=discord.Color.red())
     await forum.create_thread(name=f"{message[:-1] if len(message)<=100 else message[:99]}", content=mention,embed=embed, reason="New error report", applied_tags=[bot_report_tag])
 
