@@ -4,7 +4,6 @@ import os
 import sqlite3
 import config
 import discord # type: ignore
-#from monitor import get_atc_units
 import dotenv # type: ignore
 
 dotenv.load_dotenv(".env")
@@ -27,7 +26,7 @@ async def get_tag_by_name(channel: discord.ForumChannel, tag_name: str):
 async def send_errors(message, client, error):
     """Send an error message to the user."""
     forum = await client.fetch_channel(FORUM_CHANNEL_ID)
-    get_developer_role(client)
+    await get_developer_role(client)
     bot_report_tag = await get_tag_by_name(forum, "Error raised by bot")
     mention = f"{developer.mention}"
     embed = discord.Embed(title=f"Error report: {message}", description=f"Description: {error}", color=discord.Color.red())
