@@ -1,5 +1,4 @@
 import traceback
-from alerts import send_errors
 import config
 import discord # type: ignore
 import asyncio
@@ -9,6 +8,7 @@ from database import init_db
 from monitor import monitor_airports
 from dotenv import load_dotenv # type: ignore
 import sys
+import finder
 
 # Redirect print statements to bot.log
 # log_file = open("bot_prints.log", "a", encoding="utf-8", buffering=1)  # Append mode
@@ -81,6 +81,8 @@ async def on_ready():
     await bot_status_channel.send(f"**Bot online at {discord.utils.utcnow()} UTC.**\n")#Please note that seeing this message does not mean the bot was offline. The Discord API may change the connection anytime, thus generating this message.")
     await client.change_presence(status=discord.Status.online, activity=discord.Activity(type=discord.ActivityType.listening, name=f"{command_prefix}help"))
 
+    finder.find_bot_name(client)
+
     await monitor_airports(client, interval=60)
 
 @client.event
@@ -106,6 +108,8 @@ async def on_message(message):
 
 @client.event
 async def on_error(event, *args, **kwargs):
+    from alerts import send_errors
+
     error_message = traceback.format_exc()  # Capture full traceback
     logging.error(f"Error in {event}:\n{error_message}")
     await send_errors(event, client, error_message) #send the error message, not sys.exc_info()

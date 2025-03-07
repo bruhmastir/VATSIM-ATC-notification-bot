@@ -14,10 +14,11 @@ quickstart_optional = True
 
 
 dotenv.load_dotenv(".env")
-FORUM_CHANNEL_ID = int(os.getenv("FORUM_CHANNEL_ID" if not bot_name.lower().startswith("dev") else "DEV_FORUM_CHANNEL_ID"))  # Forum channel ID
+
 
 
 async def handle(message, client):
+    FORUM_CHANNEL_ID = int(os.getenv("FORUM_CHANNEL_ID" if not bot_name.lower().startswith("dev") else "DEV_FORUM_CHANNEL_ID"))  # Forum channel ID
     forum = await client.fetch_channel(FORUM_CHANNEL_ID)
     bot_report_tag = await get_tag_by_name(forum, "Reported through bot") # if not str(client.user).lower().startswith("dev") else "Dev bot report")
     report_tag = await get_tag_by_name(forum, "Reported")

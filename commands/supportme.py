@@ -1,10 +1,9 @@
 import logging
 import discord  # type: ignore
 import sqlite3
-from monitor import get_num_aircraft
+from monitor import get_aircraft_counts
 from vatsim import get_vatsim_data
 import config
-from monitor import get_num_aircraft
 from alerts import check_quiet_hours, send_alerts
 
 # Command metadata
@@ -69,7 +68,7 @@ async def handle(message, client):
     # atc_active = {facility: any(fac in callsign for callsign in atc_units) for facility in FACILITY_HIERARCHY.keys()}
 
     # ✅ Count aircraft still on the ground
-    num_aircraft = get_num_aircraft(icao)
+    num_aircraft = get_aircraft_counts(vatsim_data).get(icao, 0)
 
     # ✅ Fetch opted-out positions for this user & airport
     cursor.execute("SELECT position FROM user_opt_outs WHERE user_id = ? AND icao = ?", (user_id, icao))

@@ -5,17 +5,18 @@ import sqlite3
 import config
 import discord # type: ignore
 import dotenv # type: ignore
-from monitor import bot_name
+import finder
+
+bot_name = finder.bot_name
 
 dotenv.load_dotenv(".env")
 
 DEVELOPER_ROLE_ID = int(os.getenv("DEVELOPER_ROLE_ID"))  # Bot owner ID
-FORUM_CHANNEL_ID = int(os.getenv("FORUM_CHANNEL_ID" if not bot_name.lower().startswith("dev") else "DEV_FORUM_CHANNEL_ID"))  # Forum channel ID
 
-async def get_developer_role(client):
-    global developer
-    developer = await client.guilds.fetch_role(DEVELOPER_ROLE_ID) #TODO: Change this to fetch the role
-    # client.gui
+# async def get_developer_role(client):
+#     global developer
+#     developer = await client.guilds.fetch_role(DEVELOPER_ROLE_ID) #TODO: Change this to fetch the role
+#     # client.gui
 
 async def get_tag_by_name(channel: discord.ForumChannel, tag_name: str):
     """Finds a tag in a forum channel by its name."""
@@ -26,6 +27,8 @@ async def get_tag_by_name(channel: discord.ForumChannel, tag_name: str):
 
 
 async def send_errors(message, client, error):
+    FORUM_CHANNEL_ID = int(os.getenv("FORUM_CHANNEL_ID" if not bot_name.lower().startswith("dev") else "DEV_FORUM_CHANNEL_ID"))  # Forum channel ID
+
     """Send an error message to the user."""
     forum = await client.fetch_channel(FORUM_CHANNEL_ID)
     bot_report_tag = await get_tag_by_name(forum, "Error raised by bot")# if not str(client.user).lower().startswith("dev") else "Dev bot error")
