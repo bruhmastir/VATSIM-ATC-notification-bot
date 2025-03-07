@@ -1,35 +1,58 @@
-name: Auto Pull Latest Main Branch
+name: Auto Pull Latest Main Branch on VPS
 
 on:
   push:
     branches:
-      - main  # This triggers the action when the main branch is updated
+      - main  # Trigger the workflow when main is updated
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      - name: Start Deployment
+        run: echo "GitHub Actions workflow started..."
+
+      - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Set up SSH and pull latest code on VPS
+      - name: Debug GitHub Secrets
+        run: |
+          echo "Checking environment variables..."
+          echo "VPS_USER: ${{ secrets.VPS_USER }}"
+          echo "VPS_HOST: ${{ secrets.VPS_HOST }}"
+
+      - name: Setup SSH and Debug
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
         run: |
-          # Install SSH client on GitHub runner
-          sudo apt-get update
-          sudo apt-get install -y openssh-client
+          echo "Setting up SSH..."
+          
+          # Install SSH client on GitHub's runner (not on your VPS)
+          sudo apt-get update && sudo apt-get install -y openssh-client
 
-          # Set up SSH with the private key from GitHub Secrets
+          # Configure SSH private key
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
-          # SSH into the VPS and pull the latest changes from the GitHub main branch
+          # Debug SSH Key
+          echo "SSH Private Key Loaded:"
+          echo "$SSH_PRIVATE_KEY" | sed 's/./& /g' | head -n 5  # Show only first 5 lines for security
+
+          # Connect to VPS with verbose output to check for errors
+          ssh -vvv -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST "echo 'SSH connection successful'"
+
+      - name: Pull Latest Code on VPS
+        env:
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          echo "Connecting to VPS and pulling latest code..."
           ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST << EOF
-            cd ~/VATSIM-bot-Main  # Make sure this is the correct path on your VPS
-            git fetch origin  # Fetch the latest changes from GitHub
-            git pull origin/main
+            cd /path/to/your/bot/repository  # Change to the correct path where your bot runs
+            git pull origin main
+            echo "Git pull completed!"
           EOF
