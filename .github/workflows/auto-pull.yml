@@ -13,46 +13,20 @@ jobs:
       - name: Start Deployment
         run: echo "GitHub Actions workflow started..."
 
-      - name: Checkout Repository
-        uses: actions/checkout@v2
-
-      - name: Debug GitHub Secrets
+      - name: Install SSH and sshpass
         run: |
-          echo "Checking environment variables..."
-          echo "VPS_USER: ${{ secrets.VPS_USER }}"
-          echo "VPS_HOST: ${{ secrets.VPS_HOST }}"
+          sudo apt-get update
+          sudo apt-get install -y sshpass openssh-client
 
-      - name: Setup SSH and Debug
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-        run: |
-          echo "Setting up SSH..."
-          
-          # Install SSH client on GitHub's runner (not on your VPS)
-          sudo apt-get update && sudo apt-get install -y openssh-client
-
-          # Configure SSH private key
-          mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-
-          # Debug SSH Key
-          echo "SSH Private Key Loaded:"
-          echo "$SSH_PRIVATE_KEY" | sed 's/./& /g' | head -n 5  # Show only first 5 lines for security
-
-          # Connect to VPS with verbose output to check for errors
-          ssh -vvv -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST "echo 'SSH connection successful'"
-
-      - name: Pull Latest Code on VPS
+      - name: Pull Latest Code on VPS Using Password
         env:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
         run: |
           echo "Connecting to VPS and pulling latest code..."
-          ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST << EOF
-            cd /path/to/your/bot/repository  # Change to the correct path where your bot runs
+          sshpass -p "$VPS_PASSWORD" ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST << EOF
+            cd /path/to/your/bot/repository  # Change to your actual bot directory
             git pull origin main
             echo "Git pull completed!"
           EOF
