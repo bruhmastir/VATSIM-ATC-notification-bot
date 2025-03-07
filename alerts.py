@@ -4,7 +4,10 @@ import os
 import sqlite3
 import config
 import discord # type: ignore
-import monitor  # type: ignore
+#from monitor import get_atc_units
+import dotenv # type: ignore
+
+dotenv.load_dotenv(".env")
 
 DEVELOPER_ROLE_ID = int(os.getenv("DEVELOPER_ROLE_ID"))  # Bot owner ID
 FORUM_CHANNEL_ID = int(os.getenv("FORUM_CHANNEL_ID"))
@@ -178,9 +181,10 @@ async def send_alerts(icao, users_to_alert_channel, users_to_alert_dm, client, m
             try:
                 channel = await client.fetch_channel(int(os.getenv("DISCORD_CHANNEL_ID")))
                 if channel:
+                    from monitor import get_atc_units
                     mentions = " ".join([f"<@{user_id}>" for user_id in users_to_alert_channel])
                     logging.info(f"Sent alert about {icao} to {mentions} via channel")
-                    logging.debug(f"{await monitor.get_atc_units(icao)}")
+                    logging.debug(f"{await get_atc_units(icao)}")
                     await channel.send(f"{message} {mentions}")
                     await set_cooldown(user_id, icao)
 
