@@ -1,0 +1,35 @@
+name: Auto Pull Latest Main Branch
+
+on:
+  push:
+    branches:
+      - main  # This triggers the action when the main branch is updated
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up SSH and pull latest code on VPS
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          # Install SSH client on GitHub runner
+          sudo apt-get update
+          sudo apt-get install -y openssh-client
+
+          # Set up SSH with the private key from GitHub Secrets
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+          # SSH into the VPS and pull the latest changes from the GitHub main branch
+          ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST << EOF
+            cd ~/VATSIM-bot-Main  # Make sure this is the correct path on your VPS
+            git fetch origin  # Fetch the latest changes from GitHub
+            git pull origin/main
+          EOF
