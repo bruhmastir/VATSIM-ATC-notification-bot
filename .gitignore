@@ -1,6 +1,7 @@
 # Ignore specific files
 vatsim_bot.db
 test.py
+time_finder.py
 
 # Ignore all `.log` files
 *.log*

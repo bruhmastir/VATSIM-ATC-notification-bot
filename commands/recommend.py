@@ -5,6 +5,7 @@ import sqlite3
 import monitor
 from vatsim import get_vatsim_data
 import coords
+from monitor import get_aircraft_counts
 
 # Command metadata
 description = "Recommend airports where you can control based on traffic and active ATC."
@@ -45,8 +46,17 @@ async def handle(message, client):
     if not data:
         await message.channel.send("❌ **Failed to retrieve VATSIM data. Try again later.**")
         return
+    
+    # Get aircraft counts for all airports
+    aircraft_counts = get_aircraft_counts(data)
+
 
     airport_recommendations = []
+
+    # If tier is Unrestricted and user has no approved airports, notify them
+    if tier == "Unrestricted" and not unrestricted_airports:
+        await message.channel.send(f"❌ **You have no approved airports set. Please use `{config.PREFIX}setrating` to set your rating and approved airports.**")
+        return
 
     # Process airport traffic & ATC coverage
     for airport in config.SUPPORTED_AIRPORTS:
@@ -63,8 +73,7 @@ async def handle(message, client):
                 
 
         # Get airport traffic
-        airport_lat, airport_lon = coords.get_airport_coords(icao)
-        num_aircraft = monitor.get_num_aircraft(icao)
+        num_aircraft = aircraft_counts.get(icao)
 
         # Get active ATC at the airport
         atc_units = [c["callsign"] for c in data["controllers"] if icao in c["callsign"]]

@@ -84,23 +84,24 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
+    message_time = discord.utils.utcnow()
     if message.author == client.user:
         return
     command_prefix = f"{config.PREFIX if not str(client.user).lower().startswith('dev') else config.DEV_PREFIX}"
     
-    if message.content.startswith(f"{command_prefix}reload"):
-        if message.author.id != OWNER_ID:
-            #await message.channel.send("You do not have permission to reload commands.")
-            return
-        load_commands()
-        await message.channel.send("Commands reloaded successfully.")
-        return
     
     if message.content.startswith(command_prefix):
+        logging.info(f"Command received: {message.content}")
         command_name = message.content[len(command_prefix):].split()[0]
         if command_name in commands:
             importlib.reload(commands[command_name])
             await commands[command_name].handle(message, client)
+        elif command_name == "reload":
+            if message.author.id == OWNER_ID:
+                load_commands()
+                await message.channel.send("Commands reloaded successfully.")
+        exec_time = discord.utils.utcnow() - message_time
+        logging.info(f"Command {command_name} executed in {exec_time.total_seconds()} seconds.")
 
 @client.event
 async def on_error(event, *args, **kwargs):

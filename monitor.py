@@ -29,16 +29,39 @@ async def monitor_airports(client, interval=60):
                 await check_airport_status(icao, data, client)
         await asyncio.sleep(interval)
 
-def get_num_aircraft(icao):
-    data = get_vatsim_data()
-    airport_lat, airport_lon = coords.get_airport_coords(icao)
-    num_aircraft = sum(
-        1 for p in data["pilots"]
-        if p.get("groundspeed", 1) <= 40
-        and abs(p.get("latitude", 0) - airport_lat) < 0.1
-        and abs(p.get("longitude", 0) - airport_lon) < 0.1
-    )
-    return num_aircraft
+def get_aircraft_counts(data):
+    """
+    Retrieves the number of aircraft on the ground at each supported airport
+    from the given VATSIM data.
+
+    Args:
+        data (dict): The parsed VATSIM data.
+        supported_airports (list): A list of supported airport ICAO codes.
+
+    Returns:
+        dict: A dictionary mapping airport ICAO codes to aircraft counts.
+    """
+
+    supported_airports = config.SUPPORTED_AIRPORTS
+
+    
+    aircraft_counts = {}
+    if data:
+        def get_num_aircraft(icao, data):
+            airport_lat, airport_lon = coords.get_airport_coords(icao)
+            num_aircraft = sum(
+                1 for p in data["pilots"]
+                if p.get("groundspeed", 1) <= 40
+                and abs(p.get("latitude", 0) - airport_lat) < 0.1
+                and abs(p.get("longitude", 0) - airport_lon) < 0.1
+            )
+            return num_aircraft
+        
+        for icao in supported_airports:
+            aircraft_counts[icao] = get_num_aircraft(icao, data)
+
+
+    return aircraft_counts
 
 async def get_atc_units(icao):
     abbreviation = coords.get_abbr(icao)
@@ -49,7 +72,8 @@ async def get_atc_units(icao):
     ]
 
 async def check_airport_status(icao, data, client):
-    num_aircraft = get_num_aircraft(icao)
+    aircraft_counts = get_aircraft_counts(data)
+    num_aircraft = aircraft_counts.get(icao)
 
     atc_units = await get_atc_units(icao)
 
