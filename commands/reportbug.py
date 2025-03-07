@@ -18,7 +18,7 @@ FORUM_CHANNEL_ID = int(os.getenv("FORUM_CHANNEL_ID"))
 
 async def handle(message, client):
     forum = await client.fetch_channel(FORUM_CHANNEL_ID)
-    bot_report_tag = await get_tag_by_name(forum, "Reported through bot")
+    bot_report_tag = await get_tag_by_name(forum, "Reported through bot" if not str(client.user).lower().startswith("dev") else "Dev bot report")
     report_tag = await get_tag_by_name(forum, "Reported")
     tags = [bot_report_tag, report_tag]
     report_as_list = message.content.split()[1:]

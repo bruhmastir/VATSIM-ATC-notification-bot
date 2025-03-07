@@ -1,3 +1,4 @@
+import traceback
 from alerts import send_errors
 import config
 import discord # type: ignore
@@ -51,7 +52,7 @@ init_db()
 intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
-client = discord.Client(intents=intents)
+client = discord.Client(intents=intents, status=f"Listening to {config.PREFIX}help")
 
 # Dynamically load command modules
 commands = {}
@@ -73,8 +74,11 @@ load_commands()
 @client.event
 async def on_ready():
     logging.info(f"Logged in as {client.user} {discord.utils.utcnow()}")
+    command_prefix = f"{config.PREFIX if not str(client.user).lower().startswith('dev') else config.DEV_PREFIX}"
+
     bot_status_channel = await client.fetch_channel(BOT_STATUS_CHANNEL_ID)
-    await bot_status_channel.send(f"**Bot online at {discord.utils.utcnow()} UTC.**\nPlease note that seeing this message does not mean the bot was offline. The Discord API may change the connection anytime, thus generating this message.")
+    await bot_status_channel.send(f"**Bot online at {discord.utils.utcnow()} UTC.**\n")#Please note that seeing this message does not mean the bot was offline. The Discord API may change the connection anytime, thus generating this message.")
+    await client.change_presence(status=discord.Status.online, activity=discord.Activity(type=discord.ActivityType.listening, name=f"{command_prefix}help"))
 
     await monitor_airports(client, interval=60)
 
@@ -82,6 +86,7 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user:
         return
+    command_prefix = f"{config.PREFIX if not str(client.user).lower().startswith('dev') else config.DEV_PREFIX}"
     
     if message.content.startswith(f"{command_prefix}reload"):
         if message.author.id != OWNER_ID:
@@ -99,8 +104,9 @@ async def on_message(message):
 
 @client.event
 async def on_error(event, *args, **kwargs):
-    logging.error(f"Error in {event}: {sys.exc_info()}")
-    await send_errors(event, client, sys.exc_info())
+    error_message = traceback.format_exc()  # Capture full traceback
+    logging.error(f"Error in {event}:\n{error_message}")
+    await send_errors(event, client, error_message) #send the error message, not sys.exc_info()
 
 @client.event
 async def on_disconnect():
