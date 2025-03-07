@@ -29,4 +29,10 @@ jobs:
             cd ~/VATSIM-bot-Main  # Change to your actual bot directory
             git pull origin main
             echo "Git pull completed!"
+            
+            # Restart the bot
+            echo "Restarting bot..."
+            tmux kill-session -t mybot || true  # Kill existing bot session if it exists
+            tmux new-session -d -s mybot "python3 bot.py"  # Start a new tmux session running the bot
+            echo "Bot restarted successfully!"
           EOF
