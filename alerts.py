@@ -5,11 +5,12 @@ import sqlite3
 import config
 import discord # type: ignore
 import dotenv # type: ignore
+from monitor import bot_name
 
 dotenv.load_dotenv(".env")
 
 DEVELOPER_ROLE_ID = int(os.getenv("DEVELOPER_ROLE_ID"))  # Bot owner ID
-FORUM_CHANNEL_ID = int(os.getenv("FORUM_CHANNEL_ID"))
+FORUM_CHANNEL_ID = int(os.getenv("FORUM_CHANNEL_ID" if not bot_name.lower().startswith("dev") else "DEV_FORUM_CHANNEL_ID"))  # Forum channel ID
 
 async def get_developer_role(client):
     global developer
@@ -27,7 +28,7 @@ async def get_tag_by_name(channel: discord.ForumChannel, tag_name: str):
 async def send_errors(message, client, error):
     """Send an error message to the user."""
     forum = await client.fetch_channel(FORUM_CHANNEL_ID)
-    bot_report_tag = await get_tag_by_name(forum, "Error raised by bot" if not str(client.user).lower().startswith("dev") else "Dev bot error")
+    bot_report_tag = await get_tag_by_name(forum, "Error raised by bot")# if not str(client.user).lower().startswith("dev") else "Dev bot error")
     mention = f"<@&{DEVELOPER_ROLE_ID}>"
     embed = discord.Embed(title=f"Error report: {message}", description=f"Description: {error}", color=discord.Color.red())
     await forum.create_thread(name=f"{message[:-1] if len(message)<=100 else message[:99]}", content=f"{mention}, {datetime.now()}",embed=embed, reason="New error report", applied_tags=[bot_report_tag])

@@ -53,6 +53,7 @@ intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
 client = discord.Client(intents=intents, status=f"Listening to {config.PREFIX}help")
+bot_name = str(client.user)
 
 # Dynamically load command modules
 commands = {}
@@ -74,7 +75,7 @@ load_commands()
 @client.event
 async def on_ready():
     logging.info(f"Logged in as {client.user} {discord.utils.utcnow()}")
-    command_prefix = f"{config.PREFIX if not str(client.user).lower().startswith('dev') else config.DEV_PREFIX}"
+    command_prefix = f"{config.PREFIX if not bot_name.lower().startswith('dev') else config.DEV_PREFIX}"
 
     bot_status_channel = await client.fetch_channel(BOT_STATUS_CHANNEL_ID)
     await bot_status_channel.send(f"**Bot online at {discord.utils.utcnow()} UTC.**\n")#Please note that seeing this message does not mean the bot was offline. The Discord API may change the connection anytime, thus generating this message.")
@@ -87,7 +88,7 @@ async def on_message(message):
     message_time = discord.utils.utcnow()
     if message.author == client.user:
         return
-    command_prefix = f"{config.PREFIX if not str(client.user).lower().startswith('dev') else config.DEV_PREFIX}"
+    command_prefix = f"{config.PREFIX if not bot_name.lower().startswith('dev') else config.DEV_PREFIX}"
     
     
     if message.content.startswith(command_prefix):

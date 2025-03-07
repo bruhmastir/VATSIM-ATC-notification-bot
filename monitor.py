@@ -10,9 +10,10 @@ import coords
 from alerts import get_users_to_alert, send_alerts
 
 supported_airports = config.SUPPORTED_AIRPORTS  # Import supported airports
-
+bot_name = None
 
 async def monitor_airports(client, interval=60):
+    bot_name = str(client.user)
     await client.wait_until_ready()
     while not client.is_closed():
         data = get_vatsim_data()
