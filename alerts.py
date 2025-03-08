@@ -27,6 +27,7 @@ async def get_tag_by_name(channel: discord.ForumChannel, tag_name: str):
 
 
 async def send_errors(message, client, error):
+    bot_name = finder.bot_name
     FORUM_CHANNEL_ID = int(os.getenv("FORUM_CHANNEL_ID" if not bot_name.lower().startswith("dev") else "DEV_FORUM_CHANNEL_ID"))  # Forum channel ID
 
     """Send an error message to the user."""
