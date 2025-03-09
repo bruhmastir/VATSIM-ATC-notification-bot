@@ -4,10 +4,14 @@ import random
 import config
 import logging
 from discord.ui import View, Button  # type: ignore
+import finder
+
+bot_name = finder.bot_name
+PREFIX = finder.find_prefix(bot_name)
 
 # Command metadata
-description = "View your registered airports, thresholds, quiet hours, rating information, and opted-out positions."
-usage = f"{config.PREFIX}view"
+description = "View your registered airports, thresholds, quiet hours, training and current rating information, and opted-out positions."
+usage = f"`{PREFIX}view`"
 quickstart_optional = False
 
 # Randomized colors for embeds

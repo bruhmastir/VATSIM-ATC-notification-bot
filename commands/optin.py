@@ -1,11 +1,16 @@
 import sqlite3
 
 import config
+import finder
+
+bot_name = finder.bot_name
+PREFIX = finder.find_prefix(bot_name)
 
 
 description = "Remove opt-in again to receive alerts for specific ATC positions again."
-usage = f"{config.PREFIX}optin <ICAO> <position1> [position2] ..."
+usage = f"`{PREFIX}optin <ICAO> <position1> [position2] ...`"
 quickstart_optional = True
+prerequisite = f"{PREFIX}optout"
 
 
 async def handle(message, client):

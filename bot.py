@@ -10,11 +10,6 @@ from dotenv import load_dotenv # type: ignore
 import sys
 import finder
 
-# Redirect print statements to bot.log
-# log_file = open("bot_prints.log", "a", encoding="utf-8", buffering=1)  # Append mode
-# sys.stdout = log_file  # Redirect standard output (print statements)
-# sys.stderr = log_file  # Redirect errors
-
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
@@ -53,11 +48,14 @@ intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
 client = discord.Client(intents=intents, status=f"Listening to {config.PREFIX}help")
-# bot_name = str(client.user)
+finder.find_bot_name(client)
+bot_name = finder.bot_name
+
+command_prefix = f"{finder.find_prefix(bot_name)}"
 
 # Dynamically load command modules
 commands = {}
-command_prefix = f"{config.PREFIX}"
+command_prefix = f"{command_prefix}"
 command_dir = "commands"
 
 def load_commands():
@@ -78,7 +76,7 @@ async def on_ready():
     bot_name = finder.bot_name
 
     logging.info(f"Logged in as {client.user} {discord.utils.utcnow()}")
-    command_prefix = f"{config.PREFIX if not bot_name.lower().startswith('dev') else config.DEV_PREFIX}"
+    command_prefix = f"{finder.find_prefix(bot_name)}"
     logging.info(f"Command prefix: {command_prefix}, bot name lower: {bot_name.lower()}, does bot name start with dev? {bot_name.lower().startswith('dev')}")
 
     bot_status_channel = await client.fetch_channel(BOT_STATUS_CHANNEL_ID)
@@ -95,7 +93,7 @@ async def on_message(message):
     message_time = discord.utils.utcnow()
     if message.author == client.user:
         return
-    command_prefix = f"{config.PREFIX if not bot_name.lower().startswith('dev') else config.DEV_PREFIX}"
+    command_prefix = f"{finder.find_prefix(bot_name)}"
     
     
     if message.content.startswith(command_prefix):

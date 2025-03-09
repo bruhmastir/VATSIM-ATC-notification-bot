@@ -2,12 +2,17 @@ import config
 import discord  # type: ignore
 import sqlite3
 from config import SUPPORTED_AIRPORTS  # Import supported airports from config.py
+import finder
 
+bot_name = finder.bot_name
+PREFIX = finder.find_prefix(bot_name)
 # Command metadata
 description = "Edit an existing airport registration."
-long_description = "Edit your preferences for one of your registered airports. If invalid input, process cancels. [ICAO] is optional argument which can help you skip the first step."
-usage = f"{config.PREFIX}edit [ICAO]"
+long_description = "Edit your preferences for one of your registered airports. If invalid input, process cancels. `[ICAO]` is optional argument which can help you skip the first step."
+usage = f"`{PREFIX}edit [ICAO]`"
 quickstart_optional = True
+prerequisite = f"{PREFIX}register"
+
 
 async def handle(message, client):
     user_id = message.author.id

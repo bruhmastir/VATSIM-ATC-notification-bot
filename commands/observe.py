@@ -7,11 +7,16 @@ import config
 from vatsim import get_vatsim_data
 from monitor import get_atc_units
 from alerts import send_alerts
+import finder
+
+bot_name = finder.bot_name
+PREFIX = finder.find_prefix(bot_name)
 
 # Command metadata
 description = "Get notified and observe your training facility when it comes online."
-usage = f"{config.PREFIX}observe <duration_in_hours>"
-long_description = f"{description} You must have set a training plan before using this command as it specifies which airport and position to track."
+usage = f"`{PREFIX}observe <duration_in_hours>`"
+prerequisite = f"{PREFIX}settraining"
+long_description = f"{description} You must have set a training plan by using `{prerequisite}` before using this command as it specifies which airport and position to track."
 quickstart_optional = True
 
 # Facility mapping based on training level
@@ -29,7 +34,7 @@ async def handle(message, client):
     args = message.content.split()
     
     if len(args) != 2:
-        await message.channel.send(f"❌ **Usage:** `{config.PREFIX}observe <duration_in_hours>`")
+        await message.channel.send(f"❌ **Usage:** `{PREFIX}observe <duration_in_hours>`")
         return
 
     try:
@@ -42,7 +47,7 @@ async def handle(message, client):
 
     training_info = get_training_info(user_id)
     if not training_info:
-        await message.channel.send(f"❌ **You must set your training with `{config.PREFIX}settraining` before using `{config.PREFIX}observe`.**")
+        await message.channel.send(f"❌ **You must set your training with `{PREFIX}settraining` before using `{PREFIX}observe`.**")
         return
 
     training_rating, training_airport = training_info
@@ -91,27 +96,6 @@ async def monitor_observation(user_id, client):
     
     del active_observations[user_id]
 
-# async def handle_observehours(message, client):
-#     user_id = message.author.id
-#     args = message.content.split()
-    
-#     if len(args) != 3:
-#         await message.channel.send(f"❌ **Usage:** `{config.PREFIX}observehours <start_time> <end_time>` (UTC, format HH:MM)")
-#         return
-
-#     start_time, end_time = args[1], args[2]
-#     if not validate_time_format(start_time) or not validate_time_format(end_time):
-#         await message.channel.send("❌ **Invalid time format. Use HH:MM (UTC).**")
-#         return
-
-#     save_observehours(user_id, start_time, end_time)
-#     await message.channel.send(f"✅ **Your daily observation period is set from {start_time} to {end_time} UTC.**")
-
-#     while True:
-#         now = time.strftime("%H:%M", time.gmtime())
-#         if start_time <= now < end_time:
-#             await handle(message, client)
-#         await asyncio.sleep(3600)
 
 def validate_time_format(time_str):
     try:

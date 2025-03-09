@@ -7,9 +7,12 @@ import dotenv # type: ignore
 from alerts import send_errors, get_tag_by_name
 import finder
 
+bot_name = finder.bot_name
+PREFIX = finder.find_prefix(bot_name)
+
 # Command metadata
 description = "Report a bug to the developers."
-usage = f"{config.PREFIX}reportbug <description>"
+usage = f"`{PREFIX}reportbug <description>`"
 quickstart_optional = True
 
 
@@ -34,7 +37,7 @@ async def handle(message, client):
             return
         report = " ".join(report_as_list)
         embed = discord.Embed(title=f"Report by {message.author.display_name}", description=f"Reporting user ID: {message.author.id}\nContent: {message.content}", color=discord.Color.red())
-        embed.set_author(name=message.author.display_name, icon_url=message.author.avatar.url)
+        embed.set_author(name=message.author.display_name, icon_url=message.author.avatar.url if message.author.avatar else None)
         await forum.create_thread(name=f"{report[:-1] if len(report)<=100 else report[:99]}", content=f"{mention}",embed=embed, reason="New error report", applied_tags=tags)
         await message.channel.send("Bug report submitted successfully. The developers have been notified.")
         logging.info(f"Bug report submitted by {message.author.display_name} with content: {report}")

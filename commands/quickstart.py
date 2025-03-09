@@ -6,9 +6,12 @@ import importlib
 import config
 import finder
 
+bot_name = finder.bot_name
+PREFIX = finder.find_prefix(bot_name)
+
 # Command metadata
 description = "Guided setup tutorial for new users."
-usage = f"{config.PREFIX}quickstart"
+usage = f"`{PREFIX}quickstart`"
 
 bot_name = finder.bot_name
 prefix = finder.find_prefix(bot_name)

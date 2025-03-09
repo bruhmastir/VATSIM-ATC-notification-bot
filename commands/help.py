@@ -3,11 +3,15 @@ import discord  # type: ignore
 import os
 import importlib
 from discord.ui import View, Button  # type: ignore
-from config import PREFIX  # Import bot prefix from config.py
+import finder
+
+bot_name = finder.bot_name
+PREFIX = finder.find_prefix(bot_name)
 
 # Command metadata
 description = "Show available commands and their usage or get help about a specific command."
-usage = f"{config.PREFIX}help [command]"
+usage = f"`{PREFIX}help [command]`"
+long_description = f"The `{PREFIX}help` command is used to display a list of available commands and their usage. You can also get detailed information about a specific command by providing its name as an argument."
 quickstart_optional = False
 
 class HelpView(View):

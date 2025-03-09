@@ -2,10 +2,14 @@ import config
 import discord  # type: ignore
 import sqlite3
 from config import SUPPORTED_AIRPORTS  # Import supported airports from config.py
+import finder
+
+bot_name = finder.bot_name
+PREFIX = finder.find_prefix(bot_name)
 
 # Command metadata
 description = "Register an airport for monitoring and set thresholds. Requires ATC rating to be set first."
-usage = f"{config.PREFIX}register <ICAO> [Primary] [Staff Up] [Cooldown] [Alert Preference] [Support Threshold]"
+usage = f"`{PREFIX}register <ICAO> [Primary] [Staff Up] [Cooldown] [Alert Preference] [Support Threshold]`"
 quickstart_optional = False
 
 def is_valid_number(value):
@@ -23,7 +27,7 @@ async def handle(message, client):
     cursor.execute("SELECT atc_rating FROM user_ratings WHERE user_id = ?", (user_id,))
     user_rating = cursor.fetchone()
     if not user_rating:
-        await message.channel.send(f"You must set your ATC rating first using {config.PREFIX}setrating before registering an airport.")
+        await message.channel.send(f"You must set your ATC rating first using {PREFIX}setrating before registering an airport.")
         conn.close()
         return
 
@@ -118,7 +122,7 @@ async def handle(message, client):
     # ✅ Support threshold
     support_threshold = int(args[5]) if len(args) == 6 and is_valid_number(args[5]) else None
     while support_threshold is None:
-        await message.channel.send(f"The support threshold is the minimum number of aircraft that should be on the ground for you to receive an alert when someone uses {config.PREFIX}supportme \n**Set support threshold for {icao}:**")
+        await message.channel.send(f"The support threshold is the minimum number of aircraft that should be on the ground for you to receive an alert when someone uses {PREFIX}supportme \n**Set support threshold for {icao}:**")
         response = await client.wait_for("message", check=check)
         if response.content.strip().upper() == "CANCEL":
             await message.channel.send("Registration process cancelled.")

@@ -1,12 +1,17 @@
 import config
 import discord # type: ignore
 import sqlite3
+import finder
+
+bot_name = finder.bot_name
+PREFIX = finder.find_prefix(bot_name)
 
 # Command metadata
 description = "Remove a registered airport from monitoring."
-usage = f"{config.PREFIX}remove [ICAO 1] [ICAO 2] [ICAO 3]..."
-long_description = f"Remove a registered airport from monitoring. You can use {config.PREFIX}remove to remove one by one interactively, or you can use {usage} to remove as many airports as you want immediately."
+usage = f"`{PREFIX}remove [ICAO 1] [ICAO 2] [ICAO 3]...`"
+long_description = f"Remove a registered airport from monitoring. You can use `{PREFIX}remove` to remove one by one interactively, or you can use {usage} to remove as many airports as you want immediately."
 quickstart_optional = True
+prerequisite = f"{PREFIX}register"
 
 async def handle(message, client):
     user_id = message.author.id
@@ -33,4 +38,4 @@ async def handle(message, client):
     conn.commit()
     conn.close()
 
-    await message.channel.send(f"Successfully removed{airports} from your registered airports.")
+    await message.channel.send(f"Successfully removed {airports} from your registered airports.")

@@ -6,11 +6,16 @@ import time
 import config
 from monitor import get_atc_units
 from alerts import send_alerts
+import finder
+
+bot_name = finder.bot_name
+PREFIX = finder.find_prefix(bot_name)
 
 # Command metadata
 description = "Get notified and observe your training facility during specific hours."
-usage = f"{config.PREFIX}observehours <start_time> <end_time>"
-long_description = f"{description} You must have set a training plan before using this command. Time format: HH:MM (UTC)."
+usage = f"`{PREFIX}observehours <start_time> <end_time>`"
+prerequisite = f"{PREFIX}settraining"
+long_description = f"{description} You must have set a training plan by using `{prerequisite}` before using this command. Time format: `HH:MM` (UTC)."
 quickstart_optional = True
 
 TRAINING_FACILITIES = {
@@ -25,7 +30,7 @@ async def handle(message, client):
     args = message.content.split()
     
     if len(args) != 3:
-        await message.channel.send(f"❌ **Usage:** `{config.PREFIX}observehours <start_time> <end_time>` (UTC, format HH:MM)")
+        await message.channel.send(f"❌ **Usage:** `{PREFIX}observehours <start_time> <end_time>` (UTC, format HH:MM)")
         return
 
     start_time, end_time = args[1], args[2]

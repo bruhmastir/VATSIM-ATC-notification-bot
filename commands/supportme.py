@@ -5,12 +5,25 @@ from monitor import get_aircraft_counts
 from vatsim import get_vatsim_data
 import config
 from alerts import check_quiet_hours, send_alerts
+import finder
+
+bot_name = finder.bot_name
+PREFIX = finder.find_prefix(bot_name)
 
 # Command metadata
 description = "Request support from other controllers"
-usage = f"{config.PREFIX}supportme [ICAO] [Facility]"
-long_description = f"{description}. If you do not provide arguments, you will interactively request support and you can NOT choose a facility. Provide [ICAO] and [Facility] arguments for better results. If you do not select a facility, the second highest position that you can control is what will be the basis for the alerts sent to eevryone. For example, if an S3 requests support without facility specification, S2 and above will be alerted. All alerts require that minimum traffic of the amount of the alerted user's support threshold that was set during registration(and could have been edited through {config.PREFIX}edit)"
+usage = f"`{PREFIX}supportme [ICAO] [Facility]`"
+# long_description = f"{description}. If you do not provide arguments, you will interactively request support and you can NOT choose a facility. Provide [ICAO] and [Facility] arguments for better results. If you do not select a facility, the second highest position that you can control is what will be the basis for the alerts sent to evryone. For example, if an S3 requests support without facility specification, S2 and above will be alerted. All alerts require that minimum traffic of the amount of the alerted user's support threshold that was set during registration(and could have been edited through {PREFIX}edit)"
+long_description = (  
+    f"{description}. If no arguments are provided, support is requested interactively, and a facility cannot be specified. "
+    f"To specify a facility, use `[ICAO] [Facility]` as arguments. If no facility is given, the **second-highest** position "
+    f"you can control is used (e.g., an S3 will alert S2 and below).\n\n"
+    f"Alerts require the **minimum traffic meet the support threshold** set by the alerted user. "
+    f"This threshold is configured during registration and can be modified using `{PREFIX}edit`."
+)
+
 quickstart_optional = True
+prerequisite = f"{PREFIX}setrating"
 
 
 # ATC Facility Hierarchy
@@ -34,7 +47,7 @@ SECOND_HIGHEST_CONTROL = {
 async def handle(message, client):
     user_id = message.author.id
     time = discord.utils.utcnow()
-    args = message.content.split()[1:]  # Extract arguments after f"{config.PREFIX}supportme"
+    args = message.content.split()[1:]  # Extract arguments after f"{PREFIX}supportme"
 
     # ✅ Ensure user has an ATC rating set
     conn = sqlite3.connect("vatsim_bot.db")
@@ -42,14 +55,14 @@ async def handle(message, client):
     cursor.execute("SELECT atc_rating FROM user_ratings WHERE user_id = ?", (user_id,))
     user_rating = cursor.fetchone()
     if not user_rating:
-        await message.channel.send(f"You have not set your ATC rating. Use {config.PREFIX}setrating first.")
+        await message.channel.send(f"You have not set your ATC rating. Use {PREFIX}setrating first.")
         conn.close()
         return
     user_rating = user_rating[0]
 
     # ✅ Validate ICAO argument
     if len(args) < 1:
-        await message.channel.send(f"Usage: `{config.PREFIX}supportme <ICAO> [Facility] [-b]` where entries in [] are optional")
+        await message.channel.send(f"Usage: `{PREFIX}supportme <ICAO> [Facility] [-b]` where entries in [] are optional")
         conn.close()
         return
     icao = args[0].strip().upper()

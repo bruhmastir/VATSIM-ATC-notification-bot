@@ -1,10 +1,15 @@
 import sqlite3
 
 import config
+import finder
+
+bot_name = finder.bot_name
+PREFIX = finder.find_prefix(bot_name)
 
 description = "Opt out of receiving alerts for specific ATC positions at an airport."
-usage = f"{config.PREFIX}optout <ICAO> <position1> [position2] ..."
+usage = f"`{PREFIX}optout <ICAO> <position1> [position2] ...`"
 quickstart_optional = True
+prerequisite = f"{PREFIX}register"
 
 VALID_POSITIONS = {"DEL", "GND", "TWR", "APP", "DEP", "CTR"}
 

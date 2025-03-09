@@ -6,12 +6,17 @@ import monitor
 from vatsim import get_vatsim_data
 import coords
 from monitor import get_aircraft_counts
+import finder
+
+bot_name = finder.bot_name
+PREFIX = finder.find_prefix(bot_name)
 
 # Command metadata
 description = "Recommend airports where you can control based on traffic and active ATC."
 long_description = "Recommends 5 airports where you can control based on the currently active ATC positions and live VATSIM traffic, and sorts them by traffic first, then by highest unoccupied position that you can control."
-usage = f"{config.PREFIX}recommend"
+usage = f"`{PREFIX}recommend`"
 quickstart_optional = False
+prerequisite = f"{PREFIX}setrating"
 
 async def handle(message, client):
     user_id = message.author.id
@@ -23,7 +28,7 @@ async def handle(message, client):
     rating_data = cursor.fetchone()
     
     if not rating_data:
-        await message.channel.send(f"❌ **You have not set your ATC rating. Use `{config.PREFIX}setrating` first.**")
+        await message.channel.send(f"❌ **You have not set your ATC rating. Use `{PREFIX}setrating` first.**")
         conn.close()
         return
 
@@ -55,7 +60,7 @@ async def handle(message, client):
 
     # If tier is Unrestricted and user has no approved airports, notify them
     if tier == "Unrestricted" and not unrestricted_airports:
-        await message.channel.send(f"❌ **You have no approved airports set. Please use `{config.PREFIX}setrating` to set your rating and approved airports.**")
+        await message.channel.send(f"❌ **You have no approved airports set. Please use `{PREFIX}setrating` to set your rating and approved airports.**")
         return
 
     # Process airport traffic & ATC coverage
@@ -69,7 +74,7 @@ async def handle(message, client):
                 if icao not in allowed_airports:
                     continue  # Skip this airport
             else:
-                message.channel.send(f"You have no approved airports set. Please use {config.PREFIX}setrating to set your rating and approved airports")
+                message.channel.send(f"You have no approved airports set. Please use {PREFIX}setrating to set your rating and approved airports")
                 
 
         # Get airport traffic
