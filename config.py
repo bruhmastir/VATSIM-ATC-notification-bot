@@ -5,3 +5,21 @@ ATC_RATING_CONVERSIONS = {"CTR": "C1", "APP": "S3", "TWR": "S2", "GND": "S1", "D
 PREFIX = "!"
 
 DEV_PREFIX = "$"
+
+COMMAND_ORDER = [
+#    "setrating",
+ #   "register", 
+    "optout", 
+  #  "optin", 
+   # "setquiet", 
+    #"settraining", 
+#    "observe",
+ #   "observehours", 
+  #  "view", 
+   # "recommend", 
+    #"supportme", 
+#    "edit", 
+ #   "remove", 
+  #  "help", 
+   # "reportbug"
+]

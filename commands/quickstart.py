@@ -1,66 +1,83 @@
+import logging
 import discord  # type: ignore
 import asyncio
+import os
+import importlib
 import config
-import commands.setrating # import handle as setrating
-import commands.register # import handle as register
-import commands.optout # import handle as optout
-import commands.optin # import handle as optin
-import commands.setquiet # import handle as setquiet
-import commands.settraining # import handle as settraining
-import commands.observe # import handle as observe
-import commands.observehours # import handle as observehours
-import commands.view # import handle as view
-import commands.recommend # import handle as recommend
-import commands.supportme # import handle as supportme
-import commands.edit # import handle as edit
-import commands.remove # import handle as remove
-import commands.help # import handle as help_command
-import commands.reportbug # import handle as reportbug
+import finder
 
 # Command metadata
 description = "Guided setup tutorial for new users."
 usage = f"{config.PREFIX}quickstart"
 
-# Tutorial steps
-TUTORIAL_STEPS = [
-    (commands.setrating.handle, "Set your ATC rating (S1, S2, etc.).", False),
-    (commands.register.handle, "Register an airport for monitoring.", False),
-    (commands.optout.handle, "Opt out of alerts for specific positions.", True),
-    (commands.optin.handle, "Opt back into alerts for previously opted-out positions.", True),
-    (commands.setquiet.handle, "Set quiet hours to avoid alerts during specific times.", True),
-    (commands.settraining.handle, "Set your training progress.", True),
-    (commands.observe.handle, "Observe when your training facility comes online.", True),
-    (commands.observehours.handle, "Automatically observe daily during a set time period.", True),
-    (commands.view.handle, "View your current settings.", False),
-    (commands.recommend.handle, "Get airport recommendations based on traffic and ATC availability.", True),
-    (commands.supportme.handle, "Request support from other controllers.", True),
-    (commands.edit.handle, "Edit your registered airport settings.", True),
-    (commands.remove.handle, "Remove an airport from monitoring.", True),
-    (commands.help.handle, "Show available commands and their usage.", False),
-    (commands.reportbug.handle, "Report a bug to the developer.", True),
-]
+bot_name = finder.bot_name
+prefix = finder.find_prefix(bot_name)
+
+# ✅ Load all commands dynamically
+def load_commands():
+    command_dir = "commands"
+    commands_info = {}
+    
+    for filename in os.listdir(command_dir):
+        if filename.endswith(".py") and filename != "__init__.py" and filename != "quickstart.py":
+            command_name = filename[:-3]
+            module = importlib.import_module(f"commands.{command_name}")
+            command_desc = getattr(module, "long_description", getattr(module, "description", "No description available."))
+            command_usage = getattr(module, "usage", "No usage info available.")
+            is_optional = getattr(module, "quickstart_optional", False) 
+            prerequisite = getattr(module, "prerequisite", None) 
+            commands_info[command_name] = (module.handle, command_desc, is_optional, prerequisite)
+    
+    return commands_info
+
+# ✅ Load commands
+COMMANDS = load_commands()
+
+# ✅ Define the desired order of commands
+COMMAND_ORDER = config.COMMAND_ORDER
 
 async def handle(message, client):
     user = message.author
-    await user.send("🚀 **Welcome to the Quickstart Tutorial!** 🚀\nI will guide you through the essential commands step by step.")
+    await message.channel.send("🚀 **Welcome to the Quickstart Tutorial!** 🚀\nI will guide you through the essential commands step by step.")
     executed_commands = set()
+    bot_name = finder.bot_name
+    prefix = finder.find_prefix(bot_name)
     
-    for command, description, optional in TUTORIAL_STEPS:
-        await user.send(f"**{command.__name__.replace('handle', '').title()}**: {description}")
+    # ✅ Process commands in predefined order
+    for command_name in COMMAND_ORDER:
+        if command_name not in COMMANDS:
+            continue  # Skip if command is missing
+        
+        command, description, optional, prerequisite = COMMANDS[command_name]
+        await message.channel.send(f"**{command_name.title()}**: {description}")
+        await asyncio.sleep(2)  # ✅ Delay to avoid overwhelming the user
+
+        if prerequisite and prerequisite not in executed_commands:
+            await message.channel.send(f"Since you did not run {prefix}{prerequisite}, you cannot run this command yet. Skipping this step.")
+            continue
         
         if optional:
-            await user.send("Do you want to run this command? (yes/no)")
+            await message.channel.send("Do you want to run this command? (yes/no)")
             try:
-                response = await client.wait_for("message", check=lambda m: m.author == user and m.channel.type == discord.ChannelType.private, timeout=30)
+                response = await client.wait_for("message", check=lambda m: m.author == user, timeout=30)
                 if response.content.lower() != "yes":
-                    await user.send("Skipping this step.")
+                    await message.channel.send("Skipping this step.")
+                    continue
+                else:
+                    response = await message.channel.send(f"Running optional {prefix}{command_name}...")
+                    await command(response, client)
+                    logging.debug(f"message: {response}, content: {response.content}")
+                    executed_commands.add(command_name)
+                    await asyncio.sleep(1)  # ✅ Delay to avoid overwhelming the user
                     continue
             except asyncio.TimeoutError:
-                await user.send("Skipping due to no response.")
+                await message.channel.send("Skipping due to no response.")
                 continue
         
-        executed_commands.add(command.__name__)
+        response = await message.channel.send(f"Running {prefix}{command_name}...")
         await command(message, client)
-        await asyncio.sleep(2)  # Delay to avoid overwhelming the user
+        logging.debug(f"message: {message}, content: {message.content}")
+        executed_commands.add(command_name)
+        await asyncio.sleep(1)  # ✅ Delay to avoid overwhelming the user
     
-    await user.send("🎉 **Quickstart Tutorial Complete!** 🎉\nYou are now ready to use the bot.")
+    await message.channel.send("🎉 **Quickstart Tutorial Complete!** 🎉\nYou are now ready to use the bot.")
