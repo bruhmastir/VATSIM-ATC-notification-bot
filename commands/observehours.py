@@ -14,7 +14,7 @@ PREFIX = finder.find_prefix(bot_name)
 # Command metadata
 description = "Get notified and observe your training facility during specific hours."
 usage = f"`{PREFIX}observehours <start_time> <end_time>`"
-prerequisite = f"{PREFIX}settraining"
+prerequisite = f"settraining"
 long_description = f"{description} You must have set a training plan by using `{prerequisite}` before using this command. Time format: `HH:MM` (UTC)."
 quickstart_optional = True
 
@@ -25,15 +25,40 @@ TRAINING_FACILITIES = {
     "C1": "CTR"
 }
 
+import asyncio
+
 async def handle(message, client):
     user_id = message.author.id
     args = message.content.split()
-    
-    if len(args) != 3:
-        await message.channel.send(f"❌ **Usage:** `{PREFIX}observehours <start_time> <end_time>` (UTC, format HH:MM)")
-        return
+    usage = f"❌ **Usage:** `{PREFIX}observehours <start_time> <end_time>` (UTC, format HH:MM)"
 
-    start_time, end_time = args[1], args[2]
+    def check(m):
+        return m.author == message.author and m.channel == message.channel
+
+    # Prompt for missing arguments
+    if len(args) >= 2:
+        start_time = args[1]
+    else:
+        await message.channel.send("🕒 **Enter the start time (UTC) in HH:MM format:**")
+        try:
+            response = await client.wait_for('message', timeout=60, check=check)
+            start_time = response.content.strip()
+        except asyncio.TimeoutError:
+            await message.channel.send("⏱️ **Timed out waiting for start time. Please try again.**")
+            return
+
+    if len(args) >= 3:
+        end_time = args[2]
+    else:
+        await message.channel.send("🕒 **Enter the end time (UTC) in HH:MM format:**")
+        try:
+            response = await client.wait_for('message', timeout=60, check=check)
+            end_time = response.content.strip()
+        except asyncio.TimeoutError:
+            await message.channel.send("⏱️ **Timed out waiting for end time. Please try again.**")
+            return
+
+    # Validate formats
     if not validate_time_format(start_time) or not validate_time_format(end_time):
         await message.channel.send("❌ **Invalid time format. Use HH:MM (UTC).**")
         return
@@ -41,6 +66,7 @@ async def handle(message, client):
     save_observehours(user_id, start_time, end_time)
     await message.channel.send(f"✅ **Your daily observation period is set from {start_time} to {end_time} UTC.**")
 
+    
 async def check_observehours(client):
     conn = sqlite3.connect("vatsim_bot.db")
     cursor = conn.cursor()

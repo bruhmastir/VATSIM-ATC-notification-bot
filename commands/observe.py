@@ -14,8 +14,8 @@ PREFIX = finder.find_prefix(bot_name)
 
 # Command metadata
 description = "Get notified and observe your training facility when it comes online."
-usage = f"`{PREFIX}observe <duration_in_hours>`"
-prerequisite = f"{PREFIX}settraining"
+usage = f"`{PREFIX}observe [duration_in_hours]`"
+prerequisite = f"settraining"
 long_description = f"{description} You must have set a training plan by using `{prerequisite}` before using this command as it specifies which airport and position to track."
 quickstart_optional = True
 
@@ -29,21 +29,41 @@ TRAINING_FACILITIES = {
 
 active_observations = {}  # Tracks users actively observing
 
+
 async def handle(message, client):
     user_id = message.author.id
     args = message.content.split()
-    
-    if len(args) != 2:
-        await message.channel.send(f"❌ **Usage:** `{PREFIX}observe <duration_in_hours>`")
-        return
 
-    try:
-        duration = float(args[1])
-        if duration <= 0:
-            raise ValueError
-    except ValueError:
-        await message.channel.send("❌ **Invalid duration. Please enter a positive number of hours.**")
-        return
+    duration = None
+
+    # Check if duration was provided
+    if len(args) == 2:
+        try:
+            duration = float(args[1])
+            if duration <= 0:
+                raise ValueError
+        except ValueError:
+            await message.channel.send("❌ **Invalid duration. Please enter a positive number of hours.**")
+            return
+    else:
+        # Prompt for duration
+        await message.channel.send("🕒 **How many hours do you want to observe for? (e.g. `1.5`)**")
+
+        def check(m):
+            return m.author == message.author and m.channel == message.channel
+
+        try:
+            response = await client.wait_for("message", timeout=60.0, check=check)
+            try:
+                duration = float(response.content)
+                if duration <= 0:
+                    raise ValueError
+            except ValueError:
+                await message.channel.send("❌ **Invalid duration. Please enter a positive number of hours.**")
+                return
+        except asyncio.TimeoutError:
+            await message.channel.send("⏱️ **Observation setup timed out. Please try again.**")
+            return
 
     training_info = get_training_info(user_id)
     if not training_info:
@@ -55,7 +75,7 @@ async def handle(message, client):
     if not training_facility:
         await message.channel.send("❌ **Invalid training rating. Contact an admin.**")
         return
-    
+
     expiration_time = time.time() + (duration * 3600)
     active_observations[user_id] = {
         "airport": training_airport,

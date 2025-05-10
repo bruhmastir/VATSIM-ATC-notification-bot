@@ -16,7 +16,7 @@ description = "Recommend airports where you can control based on traffic and act
 long_description = "Recommends 5 airports where you can control based on the currently active ATC positions and live VATSIM traffic, and sorts them by traffic first, then by highest unoccupied position that you can control."
 usage = f"`{PREFIX}recommend`"
 quickstart_optional = False
-prerequisite = f"{PREFIX}setrating"
+prerequisite = f"setrating"
 
 async def handle(message, client):
     user_id = message.author.id

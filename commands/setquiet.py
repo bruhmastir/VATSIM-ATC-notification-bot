@@ -11,7 +11,7 @@ description = "Set or update your quiet hours."
 usage = f"`{PREFIX}setquiet`"
 long_description = f"{description} Quiet hours are times during which you do NOT want ANY alerts. Use {usage} and keep in mind that the format is `HH:MM-HH:MM` in Zulu."
 quickstart_optional = True
-prerequisite = f"{PREFIX}register"
+prerequisite = f"register"
 
 async def handle(message, client):
     user_id = message.author.id

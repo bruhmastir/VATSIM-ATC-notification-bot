@@ -11,7 +11,7 @@ description = "Edit an existing airport registration."
 long_description = "Edit your preferences for one of your registered airports. If invalid input, process cancels. `[ICAO]` is optional argument which can help you skip the first step."
 usage = f"`{PREFIX}edit [ICAO]`"
 quickstart_optional = True
-prerequisite = f"{PREFIX}register"
+prerequisite = f"register"
 
 
 async def handle(message, client):

@@ -6,7 +6,7 @@ from config import SUPPORTED_AIRPORTS, PREFIX  # Import supported airports and p
 description = "Set your current training status towards a new ATC rating or tier."
 usage = f"`{PREFIX}settraining [rating] [tier] [airport]`"
 quickstart_optional = False
-prerequisite = f"{PREFIX}setrating"
+prerequisite = f"setrating"
 
 VALID_RATINGS = {"S1", "S2", "S3", "C1"}
 VALID_TIERS = {"T1": "Tier 1", "U": "Unrestricted"}  # Short forms mapped to full name

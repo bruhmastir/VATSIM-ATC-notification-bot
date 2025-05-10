@@ -23,7 +23,7 @@ long_description = (
 )
 
 quickstart_optional = True
-prerequisite = f"{PREFIX}setrating"
+prerequisite = f"setrating"
 
 
 # ATC Facility Hierarchy

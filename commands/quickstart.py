@@ -16,7 +16,7 @@ usage = f"`{PREFIX}quickstart`"
 bot_name = finder.bot_name
 prefix = finder.find_prefix(bot_name)
 
-# ✅ Load all commands dynamically
+# Load all commands dynamically
 def load_commands():
     command_dir = "commands"
     commands_info = {}
@@ -33,10 +33,10 @@ def load_commands():
     
     return commands_info
 
-# ✅ Load commands
+# Load commands
 COMMANDS = load_commands()
 
-# ✅ Define the desired order of commands
+# Define the desired order of commands
 COMMAND_ORDER = config.COMMAND_ORDER
 
 async def handle(message, client):
@@ -46,16 +46,18 @@ async def handle(message, client):
     bot_name = finder.bot_name
     prefix = finder.find_prefix(bot_name)
     
-    # ✅ Process commands in predefined order
+    # Process commands in predefined order
     for command_name in COMMAND_ORDER:
         if command_name not in COMMANDS:
+            raise ValueError(f"Command {command_name} not found in loaded commands.")
             continue  # Skip if command is missing
         
         command, description, optional, prerequisite = COMMANDS[command_name]
         await message.channel.send(f"**{command_name.title()}**: {description}")
-        await asyncio.sleep(2)  # ✅ Delay to avoid overwhelming the user
+        await asyncio.sleep(2)  # Delay to avoid overwhelming the user
 
-        if prerequisite and prerequisite not in executed_commands:
+        if prerequisite and (prerequisite not in executed_commands):
+            logging.debug(f"Prerequisite {prerequisite} not met for command {command_name}.\n Executed commands: {executed_commands}")
             await message.channel.send(f"Since you did not run {prefix}{prerequisite}, you cannot run this command yet. Skipping this step.")
             continue
         
@@ -68,10 +70,11 @@ async def handle(message, client):
                     continue
                 else:
                     response = await message.channel.send(f"Running optional {prefix}{command_name}...")
+                    response.content = f"{prefix}{command_name}"
                     await command(response, client)
                     logging.debug(f"message: {response}, content: {response.content}")
                     executed_commands.add(command_name)
-                    await asyncio.sleep(1)  # ✅ Delay to avoid overwhelming the user
+                    await asyncio.sleep(1)  # Delay to avoid overwhelming the user
                     continue
             except asyncio.TimeoutError:
                 await message.channel.send("Skipping due to no response.")
@@ -81,6 +84,6 @@ async def handle(message, client):
         await command(message, client)
         logging.debug(f"message: {message}, content: {message.content}")
         executed_commands.add(command_name)
-        await asyncio.sleep(1)  # ✅ Delay to avoid overwhelming the user
+        await asyncio.sleep(1)  # Delay to avoid overwhelming the user
     
     await message.channel.send("🎉 **Quickstart Tutorial Complete!** 🎉\nYou are now ready to use the bot.")
