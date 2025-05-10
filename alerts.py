@@ -44,7 +44,7 @@ def get_users_to_alert(icao, num_aircraft, missing_atc, is_any_atc_active, is_so
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT user_id, primary_threshold, staff_up_threshold, cooldown, alert_preference, atc_rating, tier, unrestricted_airports
+        SELECT user_id, primary_threshold, staff_up_threshold, cooldown, alert_preference, atc_rating, tier
         FROM user_preferences JOIN user_ratings USING (user_id)
         WHERE icao = ? AND primary_threshold <= ?
     """, (icao, num_aircraft))
@@ -54,16 +54,16 @@ def get_users_to_alert(icao, num_aircraft, missing_atc, is_any_atc_active, is_so
     users_to_alert_dm = []
     message = ""
 
-    for user_id, primary_threshold, staff_up_threshold, cooldown, alert_preference, atc_rating, tier, unrestricted_airports in users:
+    for user_id, primary_threshold, staff_up_threshold, cooldown, alert_preference, atc_rating, tier in users:
         # ✅ Fetch opted-out positions for this user & airport
         cursor.execute("SELECT position FROM user_opt_outs WHERE user_id = ? AND icao = ?", (user_id, icao))
         opted_out_positions = {row[0] for row in cursor.fetchall()}  # Convert to set for fast lookup
 
         # Check for Tiers
         if tier == "Unrestricted":
-            allowed_airports = unrestricted_airports.split(",") if unrestricted_airports else []
-            if icao not in allowed_airports:
-                continue  # Skip alert if the user can't control this airport
+            # allowed_airports = unrestricted_airports.split(",") if unrestricted_airports else []
+            if icao in config.TIER_1_AIRPORTS:
+                continue  # Skip alert if the user can't control OMDB
     
     
         time = discord.utils.utcnow()

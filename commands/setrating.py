@@ -8,8 +8,8 @@ PREFIX = finder.find_prefix(bot_name)
 
 # Command metadata
 description = "Set or update your ATC rating. Part of getting started"
-usage = f"`{PREFIX}setrating <S1/S2/S3/C1> [T1/U] [ICAO1,ICAO2,...]`"
-long_description = f"Set or update your ATC rating. If rating (i.e. S1/S2/S3/C1) is provided with the command, as in `{PREFIX}setrating <rating>`, then the first step is skipped and it moves on to ask tier of rating(i.e. Tiear 1 or Unrestricted) and if it is Unrestricted, it asks which airports are you approved on."
+usage = f"`{PREFIX}setrating <S1/S2/S3/C1> [T1/U]`"
+long_description = f"Set or update your ATC rating. If rating (i.e. S1/S2/S3/C1) is provided with the command, as in `{PREFIX}setrating <rating>`, then the first step is skipped and it moves on to ask tier of rating(i.e. Tier 1 or Unrestricted)"
 quickstart_optional = False
 
 VALID_RATINGS = {"S1", "S2", "S3", "C1"}
@@ -29,10 +29,10 @@ async def handle(message, client):
         tier = parts[2].strip().upper()
     else:
         tier = None
-    if len(parts) > 3:
-        unrestricted_airports = parts[3].strip().upper()
-    else:
-        unrestricted_airports = None
+    # if len(parts) > 3:
+    #     unrestricted_airports = parts[3].strip().upper()
+    # else:
+    #     unrestricted_airports = None
         
 
     # If no rating was provided, ask the user interactively
@@ -52,7 +52,7 @@ async def handle(message, client):
         return
     
     # Tiers 
-    await message.channel.send("Choose your rating type: `T1` for Tier 1 (any airport) or `U` for Unrestricted (specific airports)")
+    await message.channel.send("Choose your rating type: `T1` for Tier 1 (any airport) or `U` for Unrestricted")
     if not tier or tier.upper() not in ["T1", "U"]:
         tier_response = await client.wait_for("message", check=check)
         tier = tier_response.content.strip().title()
@@ -63,24 +63,24 @@ async def handle(message, client):
 
     if tier == "U":
         tier_full = "Unrestricted"
-        if not unrestricted_airports or unrestricted_airports not in config.SUPPORTED_AIRPORTS:
-            await message.channel.send("Enter the ICAO codes of the airports you can control, separated by commas:")
-            airport_response = await client.wait_for("message", check=check)
-            unrestricted_airports = airport_response.content.strip().upper()
+        # if not unrestricted_airports or unrestricted_airports not in config.SUPPORTED_AIRPORTS:
+        #     await message.channel.send("Enter the ICAO codes of the airports you can control, separated by commas:")
+        #     airport_response = await client.wait_for("message", check=check)
+        #     unrestricted_airports = airport_response.content.strip().upper()
     else:
         tier_full = "Tier 1"
 
-    cursor.execute("UPDATE user_ratings SET tier = ?, unrestricted_airports = ? WHERE user_id = ?",
-                   (tier_full, unrestricted_airports, user_id))
+    cursor.execute("UPDATE user_ratings SET tier = ? WHERE user_id = ?",
+                   (tier_full, user_id))
     conn.commit()
 
 
     # Save to database
     cursor.execute("REPLACE INTO user_ratings (user_id, atc_rating) VALUES (?, ?)", (user_id, rating))
-    cursor.execute("UPDATE user_ratings SET tier = ?, unrestricted_airports = ? WHERE user_id = ?",
-                   (tier_full, unrestricted_airports, user_id))
+    cursor.execute("UPDATE user_ratings SET tier = ? WHERE user_id = ?",
+                   (tier_full, user_id))
     conn.commit()
 
     conn.close()
 
-    await message.channel.send(f"Your ATC rating has been set to {rating}, {tier_full}{f', {unrestricted_airports}' if tier_full == 'Unrestricted' else ''}.")
+    await message.channel.send(f"Your ATC rating has been set to {rating}, {tier_full}.")
