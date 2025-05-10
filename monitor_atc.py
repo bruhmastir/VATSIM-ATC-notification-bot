@@ -7,11 +7,11 @@ import discord  # type: ignore
 from vatsim import get_vatsim_data
 import config
 import coords
-from alerts import get_users_to_alert, send_alerts, bot_name, get_observers, send_observe_alerts
 
 supported_airports = config.SUPPORTED_AIRPORTS  # Import supported airports
 
 async def monitor_airports(client, interval=60):
+    from alerts import get_users_to_alert, send_alerts, bot_name, get_observers, send_observe_alerts
     await client.wait_until_ready()
     while not client.is_closed():
         data = get_vatsim_data()
@@ -87,6 +87,8 @@ async def get_atc_units(icao):
     ]
 
 async def check_airport_status(icao, data, client):
+    from alerts import get_users_to_alert, send_alerts#, bot_name, get_observers, send_observe_alerts
+
     aircraft_counts = get_aircraft_counts(data)
     num_aircraft = aircraft_counts.get(icao)
 
@@ -112,8 +114,8 @@ async def check_airport_status(icao, data, client):
 
     await send_alerts(icao, users_to_alert_channel, users_to_alert_dm, client, message, True)
 
-    observers = get_observers(icao)
-    if observers:
-        ...
+    # observers = get_observers(icao)
+    # if observers:
+    #     ...
 
     logging.debug(f"{icao} {num_aircraft} {atc_active} {discord.utils.utcnow()}")

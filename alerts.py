@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 import logging
 import os
 import sqlite3
@@ -221,7 +221,7 @@ async def send_observe_alerts(user_id, client, message):
 
 
 async def get_observers():
-    current_time = datetime.now(datetime.UTC) #.time()
+    current_time = datetime.now(UTC) #.time()
     current_time_str = current_time.strftime('%H:%M')
     current_datetime_str = current_time.strftime('%Y-%m-%d %H:%M:%S')
     conn = sqlite3.connect("vatsim_bot.db")
@@ -244,7 +244,7 @@ async def get_observers():
     for obs in temp_observers:
         user_id, start_time, end_time = obs
         observers.append(obs)
-        if current_time > end_time:
+        if current_datetime_str > end_time:
             cursor.execute("DELETE FROM temp_observe WHERE user_id = ?", (user_id))
     
     obs_by_airport = {}
