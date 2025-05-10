@@ -5,7 +5,7 @@ import asyncio
 import os
 import importlib
 from database import init_db
-from monitor import monitor_airports
+from monitor_atc import monitor_airports
 from dotenv import load_dotenv # type: ignore
 import sys
 import finder

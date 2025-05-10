@@ -7,7 +7,7 @@ import discord  # type: ignore
 from vatsim import get_vatsim_data
 import config
 import coords
-from alerts import get_users_to_alert, send_alerts, bot_name
+from alerts import get_users_to_alert, send_alerts, bot_name, get_observers, send_observe_alerts
 
 supported_airports = config.SUPPORTED_AIRPORTS  # Import supported airports
 
@@ -17,6 +17,7 @@ async def monitor_airports(client, interval=60):
         data = get_vatsim_data()
         if not data:
             logging.error("Failed to fetch VATSIM data.")
+            raise Exception("Failed to fetch VATSIM data.")
         else:
             conn = sqlite3.connect("vatsim_bot.db")
             cursor = conn.cursor()
@@ -24,8 +25,23 @@ async def monitor_airports(client, interval=60):
             monitored_airports = [row[0] for row in cursor.fetchall() if row[0] in supported_airports]
             conn.close()
 
+            # Check if any monitored airports have ATC online
             for icao in monitored_airports:
                 await check_airport_status(icao, data, client)
+            
+            # Check if any observed facilities are online
+            obs_by_airport = await get_observers()
+            for icao in obs_by_airport:
+                atc_units = await get_atc_units(icao)
+                for observer in obs_by_airport[icao]:
+                    user_id, training_facility = observer
+                    # Check if the training facility is online
+                    if atc_units:
+                        facility_online = any(training_facility in callsign for callsign in atc_units)
+                        if facility_online:
+                            # Send alert to the user
+                            message = f"✅ **`{training_facility}` is now online at `{icao}`!** <@{user_id}>"
+                            await send_observe_alerts(user_id, client, message)
         await asyncio.sleep(interval)
 
 def get_aircraft_counts(data):
@@ -95,5 +111,9 @@ async def check_airport_status(icao, data, client):
     )
 
     await send_alerts(icao, users_to_alert_channel, users_to_alert_dm, client, message, True)
+
+    observers = get_observers(icao)
+    if observers:
+        ...
 
     logging.debug(f"{icao} {num_aircraft} {atc_active} {discord.utils.utcnow()}")

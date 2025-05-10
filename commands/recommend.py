@@ -2,10 +2,10 @@ import logging
 import config
 import discord  # type: ignore
 import sqlite3
-import monitor
+import monitor_atc
 from vatsim import get_vatsim_data
 import coords
-from monitor import get_aircraft_counts
+from monitor_atc import get_aircraft_counts
 import finder
 
 bot_name = finder.bot_name

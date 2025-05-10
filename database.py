@@ -17,6 +17,24 @@ def init_db():
         PRIMARY KEY (user_id, icao)
     )
     """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_observe_hours (
+            user_id INTEGER PRIMARY KEY,
+            start_time TEXT,
+            end_time TEXT,
+            FOREIGN KEY (user_id) REFERENCES user_training(user_id)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS temp_observe (
+            user_id INTEGER PRIMARY KEY,
+            start_date_time TEXT,
+            end_date_time TEXT,
+            FOREIGN KEY (user_id) REFERENCES user_training(user_id)
+        )
+    """)
     
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS user_quiet_hours (

@@ -1,7 +1,7 @@
 import logging
 import discord  # type: ignore
 import sqlite3
-from monitor import get_aircraft_counts
+from monitor_atc import get_aircraft_counts
 from vatsim import get_vatsim_data
 import config
 from alerts import check_quiet_hours, send_alerts

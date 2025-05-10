@@ -6,6 +6,16 @@ import config
 import discord # type: ignore
 import dotenv # type: ignore
 import finder
+from monitor_atc import get_atc_units
+
+# Facility mapping based on training level
+TRAINING_FACILITIES = {
+    "S1": "GND",
+    "S2": "TWR",
+    "S3": "APP",
+    "C1": "CTR"
+}
+
 
 bot_name = finder.bot_name
 
@@ -104,7 +114,7 @@ async def check_cooldown(user_id, icao):
         cursor.execute("SELECT cooldown FROM user_preferences WHERE user_id = ? AND icao = ?", (user_id, icao))
         cooldown = cursor.fetchone()[0]
 
-        if (datetime.utcnow() - last_alert_time).total_seconds() < cooldown * 60:
+        if (datetime.now(datetime.UTC) - last_alert_time).total_seconds() < cooldown * 60:
             conn.close()
             return True  # Cooldown is still active
 
@@ -116,7 +126,7 @@ async def set_cooldown(user_id, icao):
     conn = sqlite3.connect("vatsim_bot.db")
     cursor = conn.cursor()
 
-    now = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now(datetime.UTC).strftime("%Y-%m-%d %H:%M:%S")
     cursor.execute("REPLACE INTO user_cooldowns (user_id, icao, last_alert) VALUES (?, ?, ?)", (user_id, icao, now))
 
     conn.commit()
@@ -186,7 +196,7 @@ async def send_alerts(icao, users_to_alert_channel, users_to_alert_dm, client, m
             try:
                 channel = await client.fetch_channel(int(os.getenv("DISCORD_CHANNEL_ID")))
                 if channel:
-                    from monitor import get_atc_units
+                    from monitor_atc import get_atc_units
                     mentions = " ".join([f"<@{user_id}>" for user_id in users_to_alert_channel])
                     logging.info(f"Sent alert about {icao} to {mentions} via channel")
                     logging.debug(f"{await get_atc_units(icao)}")
@@ -195,3 +205,63 @@ async def send_alerts(icao, users_to_alert_channel, users_to_alert_dm, client, m
 
             except Exception as e:
                 logging.error(f"Could not send alert about {icao} to channel. Error: {e}")
+
+
+async def send_observe_alerts(user_id, client, message):
+    logging.info("send_observe_alerts fired")
+    time = discord.utils.utcnow()
+    is_in_quiet_hours = check_quiet_hours(user_id, time)
+    if not is_in_quiet_hours:
+        user = await client.fetch_user(user_id)
+        try:
+            await user.send(message)
+            logging.info(f"Sent observe alert to {user_id} via DMs")
+        except discord.Forbidden:
+            logging.error(f"Could not DM {user_id}.")  # No need to remove from list since we are not sending to a channel
+
+
+async def get_observers():
+    current_time = datetime.now(datetime.UTC) #.time()
+    current_time_str = current_time.strftime('%H:%M')
+    current_datetime_str = current_time.strftime('%Y-%m-%d %H:%M:%S')
+    conn = sqlite3.connect("vatsim_bot.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT user_id
+        FROM user_observe_hours
+        WHERE start_time <= ? AND end_time >= ?
+    """,(current_time_str, current_time_str))
+    observers = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT user_id, start_date_time, end_date_time
+        FROM temp_observe
+        WHERE start_date_time <= ? AND end_date_time >= ?
+    """,(current_datetime_str, current_datetime_str))
+    temp_observers = cursor.fetchall()
+
+    for obs in temp_observers:
+        user_id, start_time, end_time = obs
+        observers.append(obs)
+        if current_time > end_time:
+            cursor.execute("DELETE FROM temp_observe WHERE user_id = ?", (user_id))
+    
+    obs_by_airport = {}
+
+    for observer in observers:
+        user_id = observer[0]
+        training_info = finder.get_training_info(user_id)
+        training_rating, training_airport = training_info
+        training_facility = TRAINING_FACILITIES.get(training_rating)
+        if not training_facility:
+            continue
+        if training_airport not in obs_by_airport:
+            obs_by_airport[training_airport] = [[user_id, training_facility]]
+        else:
+            obs_by_airport[training_airport].append([user_id, training_facility])
+
+
+    conn.close()
+
+    return obs_by_airport

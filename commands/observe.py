@@ -1,3 +1,5 @@
+import datetime
+import logging
 import os
 import discord  # type: ignore
 import sqlite3
@@ -5,7 +7,7 @@ import asyncio
 import time
 import config
 from vatsim import get_vatsim_data
-from monitor import get_atc_units
+from monitor_atc import get_atc_units
 from alerts import send_alerts
 import finder
 
@@ -47,7 +49,7 @@ async def handle(message, client):
             return
     else:
         # Prompt for duration
-        await message.channel.send("🕒 **How many hours do you want to observe for? (e.g. `1.5`)**")
+        await message.channel.send("🕒 **Up to how many hours from now will you be able to observe? (e.g. `1.5`)**")
 
         def check(m):
             return m.author == message.author and m.channel == message.channel
@@ -65,7 +67,7 @@ async def handle(message, client):
             await message.channel.send("⏱️ **Observation setup timed out. Please try again.**")
             return
 
-    training_info = get_training_info(user_id)
+    training_info = finder.get_training_info(user_id)
     if not training_info:
         await message.channel.send(f"❌ **You must set your training with `{PREFIX}settraining` before using `{PREFIX}observe`.**")
         return
@@ -76,59 +78,25 @@ async def handle(message, client):
         await message.channel.send("❌ **Invalid training rating. Contact an admin.**")
         return
 
-    expiration_time = time.time() + (duration * 3600)
-    active_observations[user_id] = {
-        "airport": training_airport,
-        "facility": training_facility,
-        "expires_at": expiration_time,
-        "message": None
-    }
+    now = datetime.datetime.now(datetime.UTC)
+    end_time = now + datetime.timedelta(0,(duration * 3600))
+
+    save_observehours(user_id, now.strftime("%Y-%m-%d %H:%M:%S"), end_time.strftime("%Y-%m-%d %H:%M:%S"))
 
     await message.channel.send(f"✅ **Observing `{training_facility}` at `{training_airport}` for {duration} hours...**")
-    await monitor_observation(user_id, client)
 
-async def monitor_observation(user_id, client):
-    if user_id not in active_observations:
-        return
-    
-    user_data = active_observations[user_id]
-    training_airport = user_data["airport"]
-    training_facility = user_data["facility"]
-    expiration_time = user_data["expires_at"]
-
-    while time.time() < expiration_time:
-        atc_units = await get_atc_units(training_airport)
-        facility_online = any(training_facility in callsign for callsign in atc_units)
-
-        if facility_online and user_data["message"] is None:
-            channel = await client.fetch_channel(int(os.getenv("DISCORD_CHANNEL_ID")))
-            if channel:
-                message = await channel.send(f"✅ **`{training_facility}` is now online at `{training_airport}`!** <@{user_id}>")
-                user_data["message"] = message
-        elif not facility_online and user_data["message"]:
-            try:
-                await user_data["message"].edit(content=f"❌ **`{training_facility}` is now offline at `{training_airport}`. Too late!** <@{user_id}>")
-                user_data["message"] = None
-            except discord.NotFound:
-                pass
-
-        await asyncio.sleep(60)
-    
-    del active_observations[user_id]
-
-
-def validate_time_format(time_str):
-    try:
-        time.strptime(time_str, "%H:%M")
-        return True
-    except ValueError:
-        return False
-
-def get_training_info(user_id):
+def save_observehours(user_id, start_time, end_time):
     conn = sqlite3.connect("vatsim_bot.db")
     cursor = conn.cursor()
-    cursor.execute("SELECT training_rating, training_airport FROM user_training WHERE user_id = ?", (user_id,))
-    result = cursor.fetchone()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS temp_observe (
+            user_id INTEGER PRIMARY KEY,
+            start_date_time TEXT,
+            end_date_time TEXT,
+            FOREIGN KEY (user_id) REFERENCES user_training(user_id)
+        )
+    """)
+    cursor.execute("REPLACE INTO temp_observe (user_id, start_date_time, end_date_time) VALUES (?, ?, ?)", (user_id, start_time, end_time))
+    conn.commit()
     conn.close()
-    return result
-
+    logging.info(f"Saved temporary observe hours for user {user_id}: {start_time} to {end_time}")
