@@ -24,12 +24,13 @@ async def handle(message, client):
     cursor = conn.cursor()
 
     # Check if user has set ATC rating
-    cursor.execute("SELECT atc_rating FROM user_ratings WHERE user_id = ?", (user_id,))
+    cursor.execute("SELECT atc_rating, tier FROM user_ratings WHERE user_id = ?", (user_id,))
     user_rating = cursor.fetchone()
     if not user_rating:
         await message.channel.send(f"You must set your ATC rating first using {PREFIX}setrating before registering an airport.")
         conn.close()
         return
+    user_tier = user_rating[1]
 
     def check(m): return m.author == message.author and m.channel == message.channel
     args = message.content.split()[1:]  # Extract arguments after !register
@@ -57,8 +58,11 @@ async def handle(message, client):
             conn.close()
             return
 
-        if icao not in SUPPORTED_AIRPORTS:
+        if icao not in SUPPORTED_AIRPORTS or len(icao) != 4:
             await message.channel.send("Invalid ICAO code. Please enter a valid airport from the supported list.")
+            icao = None  # Reset to ensure re-asking
+        if icao == "OMDB" and user_tier != "Tier 1":
+            await message.channel.send("You need to be Tier 1 to register for OMDB.")
             icao = None  # Reset to ensure re-asking
 
     # ✅ Primary threshold
