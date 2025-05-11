@@ -44,126 +44,203 @@ SECOND_HIGHEST_CONTROL = {
     "S1": "DEL"   # S1 defaults to DEL instead of GND
 }
 
+# async def handle(message, client):
+#     user_id = message.author.id
+#     time = discord.utils.utcnow()
+#     args = message.content.split()[1:]  # Extract arguments after f"{PREFIX}supportme"
+
+#     # ✅ Ensure user has an ATC rating set
+#     conn = sqlite3.connect("vatsim_bot.db")
+#     cursor = conn.cursor()
+#     cursor.execute("SELECT atc_rating FROM user_ratings WHERE user_id = ?", (user_id,))
+#     user_rating = cursor.fetchone()
+#     if not user_rating:
+#         await message.channel.send(f"You have not set your ATC rating. Use {PREFIX}setrating first.")
+#         conn.close()
+#         return
+#     user_rating = user_rating[0]
+
+#     # ✅ Validate ICAO argument
+#     if len(args) < 1:
+#         await message.channel.send(f"Usage: `{PREFIX}supportme <ICAO> [Facility] [-b]` where entries in [] are optional")
+#         conn.close()
+#         return
+#     icao = args[0].strip().upper()
+#     if icao not in config.SUPPORTED_AIRPORTS:
+#         await message.channel.send(f"Invalid ICAO code. `{icao}` is not in the supported airports list.")
+#         conn.close()
+#         return
+
+#     # ✅ Extract facility & check if -b flag is included
+#     requested_facility = args[1].strip().upper() if len(args) > 1 and args[1].upper() in FACILITY_HIERARCHY else SECOND_HIGHEST_CONTROL.get(user_rating, "DEL")
+#     broad_alert = False #"-b" in args  # Check if -b flag exists
+
+#     # ✅ Fetch VATSIM data
+#     vatsim_data = get_vatsim_data()
+#     atc_units = [c['callsign'] for c in vatsim_data['controllers'] if icao in c['callsign']]
+#     # atc_active = {facility: any(fac in callsign for callsign in atc_units) for facility in FACILITY_HIERARCHY.keys()}
+
+#     # ✅ Count aircraft still on the ground
+#     num_aircraft = get_aircraft_counts(vatsim_data).get(icao, 0)
+
+#     # ✅ Fetch opted-out positions for this user & airport
+#     cursor.execute("SELECT position FROM user_opt_outs WHERE user_id = ? AND icao = ?", (user_id, icao))
+#     opted_out_positions = {row[0] for row in cursor.fetchall()}  # Convert to set for fast lookup
+
+
+#     # ✅ Get users who meet the `support_threshold`
+#     cursor.execute("""
+#         SELECT user_id, atc_rating, alert_preference, support_threshold 
+#         FROM user_preferences 
+#         JOIN user_ratings USING (user_id)
+#         WHERE icao = ?
+#     """, (icao,))
+#     users = cursor.fetchall()
+
+#     if not users:
+#         await message.channel.send(f"No controllers are registered for {icao}.")
+#         conn.close()
+#         return
+
+
+#     # Check what are the requested facilities
+#     requested_facilities = [requested_facility]
+#     requested_ratings = FACILITY_HIERARCHY[requested_facility]
+#     # requested_ratings = config.ATC_RATING_CONVERSIONS[requested_facility]
+#     if broad_alert:
+#         requested_facilities.append(FACILITY_HIERARCHY[f] for f in FACILITY_HIERARCHY.keys() if f < requested_facility)
+#     logging.debug(f"{requested_facilities}")
+
+#     # ✅ Find controllers to alert (only if their support_threshold is met)
+#     to_alert = []
+#     for user_id, atc_rating, alert_preference, support_threshold in users:
+#         eligible_facilities = requested_facilities
+#         logging.debug("atc rating %s", atc_rating)
+#         logging.debug("eligible1 %s", eligible_facilities)
+#         if num_aircraft >= support_threshold:  # Ensure traffic meets their threshold
+#             logging.debug("Passed threshold")
+#             # ✅ Fetch opted-out positions for this user & airport
+#             cursor.execute("SELECT position FROM user_opt_outs WHERE user_id = ? AND icao = ?", (user_id, icao))
+#             opted_out_positions = {row[0] for row in cursor.fetchall()}  # Convert to set for fast lookup
+#             if atc_rating in requested_ratings:
+#                 logging.debug("passed rating in requested facilities")
+#             # if atc_rating in FACILITY_HIERARCHY[requested_facility] or (broad_alert and any(atc_rating in FACILITY_HIERARCHY[f] for f in FACILITY_HIERARCHY.keys() if f <= requested_facility)):
+#                 # ✅ Fetch opted-out positions for this user & airport
+#                 cursor.execute("SELECT position FROM user_opt_outs WHERE user_id = ? AND icao = ?", (user_id, icao))
+#                 opted_out_positions = {row[0] for row in cursor.fetchall()}  # Convert to set for fast lookup
+#                 for facility in opted_out_positions:
+#                     if facility in eligible_facilities:
+#                         eligible_facilities.remove(facility)
+#                 logging.debug("eligible %s", eligible_facilities)
+#                 in_quiet_hours = await check_quiet_hours(user_id, time)
+#                 if eligible_facilities and not in_quiet_hours:
+#                     to_alert.append((user_id, alert_preference))
+
+#     logging.debug("to alert %s", to_alert if to_alert else "")
+#     if not to_alert:
+#         await message.channel.send(f"No available controllers meet the support threshold for {requested_facility} at {icao}.")
+#         conn.close()
+#         return
+
+#     # ✅ Send alerts
+#     message_text = f"🚨 {message.author.display_name} is requesting **{requested_facility}** at **{icao}**!"
+#     if broad_alert: # TODO: Change below text location
+#         message_text += " (Also notifying controllers for lower positions)"
+
+#     users_to_alert_channel = []
+#     users_to_alert_dm = []
+#     for user_id, alert_preference in to_alert:
+#         user = await client.fetch_user(user_id)
+#         try:
+#             if alert_preference == "dm":
+#                 users_to_alert_dm.append(user_id)
+#                 # await user.send(message_text)
+#             else:
+#                 # await message.channel.send(f"<@{user_id}> {message_text}")
+#                 users_to_alert_channel.append(user_id)
+#         except discord.Forbidden:
+#             logging.error(f"Could not send DM to {user_id}, falling back to channel message.")
+#             users_to_alert_channel.append(user_id)
+#             # await message.channel.send(f"<@{user_id}> {message_text}")
+    
+#     await send_alerts(icao, users_to_alert_channel, users_to_alert_dm, client, message_text)
+
+#     await message.channel.send(f"Support request for {requested_facility} at {icao} has been sent.")
+#     conn.close()
+
 async def handle(message, client):
     user_id = message.author.id
     time = discord.utils.utcnow()
-    args = message.content.split()[1:]  # Extract arguments after f"{PREFIX}supportme"
+    args = message.content.split()[1:]
 
-    # ✅ Ensure user has an ATC rating set
+    if len(args) != 2:
+        await message.channel.send(f"Usage: `{PREFIX}supportme <ICAO> <FACILITY>`")
+        return
+
+    icao, requested_facility = args[0].strip().upper(), args[1].strip().upper()
+
+    if icao not in config.SUPPORTED_AIRPORTS or requested_facility not in FACILITY_HIERARCHY:
+        await message.channel.send("❌ Invalid ICAO or facility.")
+        return
+
     conn = sqlite3.connect("vatsim_bot.db")
     cursor = conn.cursor()
+
     cursor.execute("SELECT atc_rating FROM user_ratings WHERE user_id = ?", (user_id,))
-    user_rating = cursor.fetchone()
-    if not user_rating:
-        await message.channel.send(f"You have not set your ATC rating. Use {PREFIX}setrating first.")
+    row = cursor.fetchone()
+    if not row:
+        await message.channel.send(f"You have not set your ATC rating. Use `{PREFIX}setrating` first.")
         conn.close()
         return
-    user_rating = user_rating[0]
+    user_rating = row[0]
 
-    # ✅ Validate ICAO argument
-    if len(args) < 1:
-        await message.channel.send(f"Usage: `{PREFIX}supportme <ICAO> [Facility] [-b]` where entries in [] are optional")
-        conn.close()
-        return
-    icao = args[0].strip().upper()
-    if icao not in config.SUPPORTED_AIRPORTS:
-        await message.channel.send(f"Invalid ICAO code. `{icao}` is not in the supported airports list.")
-        conn.close()
-        return
-
-    # ✅ Extract facility & check if -b flag is included
-    requested_facility = args[1].strip().upper() if len(args) > 1 and args[1].upper() in FACILITY_HIERARCHY else SECOND_HIGHEST_CONTROL.get(user_rating, "DEL")
-    broad_alert = False #"-b" in args  # Check if -b flag exists
-
-    # ✅ Fetch VATSIM data
     vatsim_data = get_vatsim_data()
-    atc_units = [c['callsign'] for c in vatsim_data['controllers'] if icao in c['callsign']]
-    # atc_active = {facility: any(fac in callsign for callsign in atc_units) for facility in FACILITY_HIERARCHY.keys()}
-
-    # ✅ Count aircraft still on the ground
     num_aircraft = get_aircraft_counts(vatsim_data).get(icao, 0)
 
-    # ✅ Fetch opted-out positions for this user & airport
-    cursor.execute("SELECT position FROM user_opt_outs WHERE user_id = ? AND icao = ?", (user_id, icao))
-    opted_out_positions = {row[0] for row in cursor.fetchall()}  # Convert to set for fast lookup
+    requested_ratings = FACILITY_HIERARCHY[requested_facility]
 
-
-    # ✅ Get users who meet the `support_threshold`
     cursor.execute("""
-        SELECT user_id, atc_rating, alert_preference, support_threshold 
-        FROM user_preferences 
+        SELECT user_id, atc_rating, alert_preference, support_threshold
+        FROM user_preferences
         JOIN user_ratings USING (user_id)
         WHERE icao = ?
     """, (icao,))
     users = cursor.fetchall()
 
-    if not users:
-        await message.channel.send(f"No controllers are registered for {icao}.")
-        conn.close()
-        return
-
-
-    # Check what are the requested facilities
-    requested_facilities = [requested_facility]
-    requested_ratings = FACILITY_HIERARCHY[requested_facility]
-    # requested_ratings = config.ATC_RATING_CONVERSIONS[requested_facility]
-    if broad_alert:
-        requested_facilities.append(FACILITY_HIERARCHY[f] for f in FACILITY_HIERARCHY.keys() if f < requested_facility)
-    logging.debug(f"{requested_facilities}")
-
-    # ✅ Find controllers to alert (only if their support_threshold is met)
     to_alert = []
-    for user_id, atc_rating, alert_preference, support_threshold in users:
-        eligible_facilities = requested_facilities
-        logging.debug("atc rating %s", atc_rating)
-        logging.debug("eligible1 %s", eligible_facilities)
-        if num_aircraft >= support_threshold:  # Ensure traffic meets their threshold
-            logging.debug("Passed threshold")
-            # ✅ Fetch opted-out positions for this user & airport
-            cursor.execute("SELECT position FROM user_opt_outs WHERE user_id = ? AND icao = ?", (user_id, icao))
-            opted_out_positions = {row[0] for row in cursor.fetchall()}  # Convert to set for fast lookup
-            if atc_rating in requested_ratings:
-                logging.debug("passed rating in requested facilities")
-            # if atc_rating in FACILITY_HIERARCHY[requested_facility] or (broad_alert and any(atc_rating in FACILITY_HIERARCHY[f] for f in FACILITY_HIERARCHY.keys() if f <= requested_facility)):
-                # ✅ Fetch opted-out positions for this user & airport
-                cursor.execute("SELECT position FROM user_opt_outs WHERE user_id = ? AND icao = ?", (user_id, icao))
-                opted_out_positions = {row[0] for row in cursor.fetchall()}  # Convert to set for fast lookup
-                for facility in opted_out_positions:
-                    if facility in eligible_facilities:
-                        eligible_facilities.remove(facility)
-                logging.debug("eligible %s", eligible_facilities)
-                in_quiet_hours = await check_quiet_hours(user_id, time)
-                if eligible_facilities and not in_quiet_hours:
-                    to_alert.append((user_id, alert_preference))
+    for target_id, target_rating, alert_pref, threshold in users:
+        if num_aircraft < threshold or target_rating not in requested_ratings:
+            continue
 
-    logging.debug("to alert %s", to_alert if to_alert else "")
+        cursor.execute("SELECT position FROM user_opt_outs WHERE user_id = ? AND icao = ?", (target_id, icao))
+        opted_out = {row[0] for row in cursor.fetchall()}
+
+        if requested_facility in opted_out:
+            continue
+
+        if await check_quiet_hours(target_id, time):
+            continue
+
+        to_alert.append((target_id, alert_pref))
+
     if not to_alert:
-        await message.channel.send(f"No available controllers meet the support threshold for {requested_facility} at {icao}.")
+        await message.channel.send(f"No available controllers meet the support threshold for **{requested_facility}** at **{icao}**.")
         conn.close()
         return
 
-    # ✅ Send alerts
     message_text = f"🚨 {message.author.display_name} is requesting **{requested_facility}** at **{icao}**!"
-    if broad_alert: # TODO: Change below text location
-        message_text += " (Also notifying controllers for lower positions)"
+    users_dm, users_mention = [], []
 
-    users_to_alert_channel = []
-    users_to_alert_dm = []
-    for user_id, alert_preference in to_alert:
-        user = await client.fetch_user(user_id)
+    for target_id, alert_pref in to_alert:
+        user = await client.fetch_user(target_id)
         try:
-            if alert_preference == "dm":
-                users_to_alert_dm.append(user_id)
-                # await user.send(message_text)
+            if alert_pref == "dm":
+                users_dm.append(target_id)
             else:
-                # await message.channel.send(f"<@{user_id}> {message_text}")
-                users_to_alert_channel.append(user_id)
+                users_mention.append(target_id)
         except discord.Forbidden:
-            logging.error(f"Could not send DM to {user_id}, falling back to channel message.")
-            users_to_alert_channel.append(user_id)
-            # await message.channel.send(f"<@{user_id}> {message_text}")
-    
-    await send_alerts(icao, users_to_alert_channel, users_to_alert_dm, client, message_text)
+            users_mention.append(target_id)
 
-    await message.channel.send(f"Support request for {requested_facility} at {icao} has been sent.")
+    await send_alerts(icao, users_mention, users_dm, client, message_text)
+    await message.channel.send(f"Support request for **{requested_facility}** at **{icao}** has been sent.")
     conn.close()
