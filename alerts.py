@@ -1,4 +1,4 @@
-import datetime #, timedelta, UTC
+from datetime import datetime, timezone #, timedelta, UTC
 import logging
 import os
 import sqlite3
@@ -45,7 +45,7 @@ async def send_errors(message, client, error):
     bot_report_tag = await get_tag_by_name(forum, "Error raised by bot")# if not str(client.user).lower().startswith("dev") else "Dev bot error")
     mention = f"<@&{DEVELOPER_ROLE_ID}>"
     embed = discord.Embed(title=f"Error report: {message}", description=f"Description: {error}", color=discord.Color.red())
-    await forum.create_thread(name=f"{message[:-1] if len(message)<=100 else message[:99]}", content=f"{mention}, {datetime.datetime.now()}",embed=embed, reason="New error report", applied_tags=[bot_report_tag])
+    await forum.create_thread(name=f"{message[:-1] if len(message)<=100 else message[:99]}", content=f"{mention}, {datetime.now()}",embed=embed, reason="New error report", applied_tags=[bot_report_tag])
 
 
 # ✅ Fetch users who should be alerted
@@ -110,11 +110,11 @@ async def check_cooldown(user_id, icao):
     result = cursor.fetchone()
 
     if result:
-        last_alert_time = datetime.datetime.strptime(result[0], "%Y-%m-%d %H:%M:%S")
+        last_alert_time = datetime.strptime(result[0], "%Y-%m-%d %H:%M:%S")
         cursor.execute("SELECT cooldown FROM user_preferences WHERE user_id = ? AND icao = ?", (user_id, icao))
         cooldown = cursor.fetchone()[0]
 
-        if (datetime.datetime.now(datetime.datetime.UTC) - last_alert_time).total_seconds() < cooldown * 60:
+        if (datetime.now(timezone.utc) - last_alert_time).total_seconds() < cooldown * 60:
             conn.close()
             return True  # Cooldown is still active
 
@@ -126,7 +126,7 @@ async def set_cooldown(user_id, icao):
     conn = sqlite3.connect("vatsim_bot.db")
     cursor = conn.cursor()
 
-    now = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     cursor.execute("REPLACE INTO user_cooldowns (user_id, icao, last_alert) VALUES (?, ?, ?)", (user_id, icao, now))
 
     conn.commit()
@@ -140,8 +140,8 @@ def check_quiet_hours(user_id, time):
 
     def in_between(now, start, end):
     # Convert HH:MM strings to datetime.time objects
-        start_time = datetime.datetime.strptime(start, "%H:%M").time()
-        end_time = datetime.datetime.strptime(end, "%H:%M").time()
+        start_time = datetime.strptime(start, "%H:%M").time()
+        end_time = datetime.strptime(end, "%H:%M").time()
         now_time = now.time()  # Convert discord timestamp to time
     
         # Check if 'now' is between 'start' and 'end'
@@ -221,7 +221,7 @@ async def send_observe_alerts(user_id, client, message):
 
 
 async def get_observers():
-    current_time = datetime.datetime.now(datetime.UTC) #.time()
+    current_time = datetime.now(timezone.utc) #.time()
     current_time_str = current_time.strftime('%H:%M')
     current_datetime_str = current_time.strftime('%Y-%m-%d %H:%M:%S')
     conn = sqlite3.connect("vatsim_bot.db")
