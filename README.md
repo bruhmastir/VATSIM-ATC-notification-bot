@@ -13,4 +13,4 @@ Also I need a better name so feel free to give me your ideas.
 https://discord.com/users/1345800358567612539
 
 
-This bot is currently designed to support Arabian vACC only. To host a similar one for your own vACC, fork this repository, update the config.py file with your supported airports, fill in the .env.example file and rename it to .env, and run python3 bot.py
+This bot is currently designed to support Arabian vACC only. To host a similar one for your own vACC, fork this repository, update the config.py file with your supported airports, fill in the .env.example file and rename it to .env, and run python3 bot.py. you should also replace the files in vatglasses-data with the files relating to your FIRs.
