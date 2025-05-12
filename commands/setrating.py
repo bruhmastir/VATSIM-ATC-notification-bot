@@ -8,7 +8,7 @@ PREFIX = finder.find_prefix(bot_name)
 
 # Command metadata
 description = "Set or update your ATC rating. Part of getting started"
-usage = f"`{PREFIX}setrating <S1/S2/S3/C1> [T1/U]`"
+usage = f"`{PREFIX}setrating [S1/S2/S3/C1] [T1/U]`"
 long_description = f"Set or update your ATC rating. If rating (i.e. S1/S2/S3/C1) is provided with the command, as in `{PREFIX}setrating <rating>`, then the first step is skipped and it moves on to ask tier of rating(i.e. Tier 1 or Unrestricted)"
 quickstart_optional = False
 
@@ -33,21 +33,21 @@ async def handle(message, client):
     #     unrestricted_airports = parts[3].strip().upper()
     # else:
     #     unrestricted_airports = None
-        
+    def check(m): 
+        return m.author == message.author # and m.channel == message.channel   
 
     # If no rating was provided, ask the user interactively
     if not rating:
         await message.channel.send("Enter your ATC rating (S1, S2, S3, C1):")
 
-        def check(m): 
-            return m.author == message.author # and m.channel == message.channel
+
         
         rating_response = await client.wait_for("message", check=check)
         rating = rating_response.content.strip().upper()
 
     # Validate the rating
     if rating not in VALID_RATINGS:
-        await message.channel.send("Invalid ATC rating. Please enter one of: S1, S2, S3, C1.")
+        await message.channel.send("Invalid ATC rating. Please enter one of: S1, S2, S3, C1 next time.")
         conn.close()
         return
     
@@ -58,7 +58,7 @@ async def handle(message, client):
         tier = tier_response.content.strip().title()
 
     if tier.upper() not in ["T1", "U"]:
-        await message.channel.send("Invalid choice. Please type `T1` for Tier 1 or `U` for Unrestricted.")
+        await message.channel.send("Invalid choice. Please type `T1` for Tier 1 or `U` for Unrestricted next time.")
         return
 
     if tier == "U":
