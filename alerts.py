@@ -114,7 +114,7 @@ async def check_cooldown(user_id, icao):
         cursor.execute("SELECT cooldown FROM user_preferences WHERE user_id = ? AND icao = ?", (user_id, icao))
         cooldown = cursor.fetchone()[0]
 
-        if (datetime.now(timezone.utc) - last_alert_time).total_seconds() < cooldown * 60:
+        if (datetime.now() - last_alert_time).total_seconds() < cooldown * 60:
             conn.close()
             return True  # Cooldown is still active
 
